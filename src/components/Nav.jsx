@@ -25,6 +25,16 @@ export default function Nav() {
         <a href="#feed">Mogged Feed</a>
         <a href="#census">Census</a>
         <a href="#market">Market</a>
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            actions.openBid();
+          }}
+          style={{ color: "#ffd76a" }}
+        >
+          💰 Cash Shop
+        </a>
         <a className="nav-cta" href="#profile" onClick={handleCta}>
           Claim Your Aura
         </a>

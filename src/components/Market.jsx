@@ -15,6 +15,18 @@ export default function Market() {
           💸
         </p>
       </div>
+      <div className="cash-strip card">
+        <div className="cash-strip-txt">
+          <b>Broke but famous? Out of coins but full of main-character energy?</b>
+          <p>
+            The <b>Cash Shop</b> is where the bag lives: board slots (rank is what you pay), cash
+            Golden Upvotes (+500 aura), and the permanent Flex Frame. Stripe-secured. Zero shame.
+          </p>
+        </div>
+        <button className="btn cash" onClick={actions.openBid}>
+          💸 Open Cash Shop
+        </button>
+      </div>
       <div className="market-grid">
         {MARKET.map((m) => {
           const owned = state.owned.includes(m.id);

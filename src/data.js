@@ -731,4 +731,28 @@ export const FEED_TEMPLATES = [
   "{a} +{n} Rizz in the Aura Market 💸",
   "The Algorithm blessed {a} with +{n} aura 🌀",
   "{a} and {b} are cooking in the group chat 🔥",
+  "{a} bought the #{n} spot on the Clout Board 💰",
+  "{a} flexed a {n}x bag to be #1 on the board 👑",
+  "{a} paid to stand above {b}. No votes. Just bag. 💸",
 ];
+
+/* ------------------------- Cash Shop (real money, Stripe) ------------------------- */
+// Prices in cents (USD). `slot` is the outbid.lol mechanic: rank is what you pay.
+export const CASH_SHOP = {
+  slot: {
+    label: "Board Slot",
+    minCents: 300, // $3 minimum bid
+    tiers: [300, 500, 1000, 2500, 5000, 10000], // $3 / $5 / $10 / $25 / $50 / $100
+    desc: "Claim a spot at the TOP of the Aura Leaderboard. Rank is what you pay — outbid everyone, become #1. Includes the ✓ Aura Verified badge.",
+  },
+  golden: {
+    label: "Cash Golden Upvote",
+    price: 200, // $2
+    desc: "Drop real cash on a +500 Aura Golden Upvote for any celebrity. Public feed shoutout. Pure glaze, zero shame.",
+  },
+  frame: {
+    label: "Permanent Flex Frame",
+    price: 500, // $5
+    desc: "Golden glow around your profile card. Forever. The ultimate paid flex.",
+  },
+};

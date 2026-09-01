@@ -17,11 +17,13 @@ export const defaultState = () => ({
   feed: [],
   battle: {},
   players: 12847,
+  bids: [],
   battleLock: false,
   // ui
   toast: null,
   claimOpen: false,
   goldenOpen: false,
+  bidOpen: false,
   confettiN: 0,
 });
 
@@ -100,9 +102,38 @@ export function reducer(state, action) {
         censusCounts: d.censusCounts || state.censusCounts,
         feed: d.feed || state.feed,
         players: d.players ?? state.players,
+        bids: Array.isArray(d.bids) ? d.bids : state.bids,
       };
       if (!state.battleLock && d.battle) st.battle = d.battle;
       return st;
+    }
+    case "PAID_ORDER": {
+      // A real-money order confirmed via Stripe (reported back through /api/order/:id)
+      const product = action.payload.product;
+      if (product === "frame") {
+        if (state.owned.includes("flexframe")) return state;
+        return {
+          ...state,
+          owned: [...state.owned, "flexframe"],
+          confettiN: state.confettiN + 1,
+          toast: "Permanent Flex Frame unlocked ✨ You glow forever now.",
+        };
+      }
+      if (product === "slot") {
+        return {
+          ...state,
+          confettiN: state.confettiN + 1,
+          toast: "💰 You're on the board. Rank is what you pay. Check the top.",
+        };
+      }
+      if (product === "golden") {
+        return {
+          ...state,
+          confettiN: state.confettiN + 1,
+          toast: "💸 Cash Golden Upvote sent. +500 Aura deployed. Pure glaze.",
+        };
+      }
+      return state;
     }
     case "VOTE_OK": {
       const { id, aura, remaining, dir } = action.payload;
@@ -234,6 +265,10 @@ export function reducer(state, action) {
       return { ...state, claimOpen: false };
     case "CLOSE_GOLDEN":
       return { ...state, goldenOpen: false };
+    case "OPEN_BID":
+      return { ...state, bidOpen: true };
+    case "CLOSE_BID":
+      return { ...state, bidOpen: false };
     case "RESET_CONFETTI":
       return { ...state, confettiN: 0 };
     default:

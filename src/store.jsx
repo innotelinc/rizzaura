@@ -177,6 +177,44 @@ export function StoreProvider({ children }) {
       openClaim: () => dispatch({ type: "OPEN_CLAIM" }),
       closeClaim: () => dispatch({ type: "CLOSE_CLAIM" }),
       closeGolden: () => dispatch({ type: "CLOSE_GOLDEN" }),
+      openBid: () => dispatch({ type: "OPEN_BID" }),
+      closeBid: () => dispatch({ type: "CLOSE_BID" }),
+      // Cash Shop — create a Stripe Checkout session and send the buyer over.
+      checkout: async (spec) => {
+        try {
+          const res = await api("/api/checkout", {
+            method: "POST",
+            body: JSON.stringify(spec),
+          });
+          if (!res.ok || !res.url) {
+            dispatch({
+              type: "TOAST",
+              payload:
+                res.error === "not_configured"
+                  ? "Cash shop isn't live yet 💀 Stripe keys not set"
+                  : "Checkout glitched 💀 Try again",
+            });
+            return;
+          }
+          window.location.href = res.url;
+        } catch {
+          dispatch({ type: "TOAST", payload: "Can't reach the Rizz Aura server 💀" });
+        }
+      },
+      // After Stripe redirects back (?session=...), confirm the order and
+      // apply any client-side cosmetics. Returns true when confirmed.
+      applyPaidOrder: async (sessionId) => {
+        try {
+          const res = await api("/api/order/" + encodeURIComponent(sessionId));
+          if (res.ok && res.order) {
+            dispatch({ type: "PAID_ORDER", payload: { product: res.order.product } });
+            return true;
+          }
+        } catch {
+          /* server unreachable */
+        }
+        return false;
+      },
       resetConfetti: () => dispatch({ type: "RESET_CONFETTI" }),
     }),
     [dispatch, syncNow],

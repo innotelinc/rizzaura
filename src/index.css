@@ -905,6 +905,250 @@ footer b {
   color: transparent;
 }
 
+/* ---------- cash shop ---------- */
+.btn.cash {
+  background: linear-gradient(90deg, #ffd76a, #ff9f43, #ff5ce1);
+  background-size: 200% auto;
+  box-shadow: 0 0 26px rgba(255, 215, 106, 0.4);
+}
+.btn.cash:hover {
+  box-shadow: 0 0 44px rgba(255, 159, 67, 0.6);
+}
+.cash-strip {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  justify-content: space-between;
+  padding: 1.3rem 1.5rem;
+  margin-bottom: 1.4rem;
+  border-color: rgba(255, 215, 106, 0.35);
+  background: linear-gradient(120deg, rgba(255, 215, 106, 0.08), rgba(255, 92, 225, 0.05));
+}
+.cash-strip-txt b {
+  font-size: 0.95rem;
+}
+.cash-strip-txt p {
+  color: var(--dim);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin-top: 0.35rem;
+  max-width: 60ch;
+}
+.cash-strip-txt p b {
+  color: #ffd76a;
+}
+.lb-head {
+  position: relative;
+}
+.cash-cta {
+  margin-top: 1rem;
+  border-color: rgba(255, 215, 106, 0.55);
+  color: #ffd76a;
+}
+.cash-cta:hover {
+  border-color: #ffd76a;
+  box-shadow: 0 0 20px rgba(255, 215, 106, 0.35);
+}
+.top-bid-line {
+  margin-top: 0.9rem;
+  font-size: 0.85rem;
+  color: var(--dim);
+}
+.top-bid-line b {
+  color: #ffd76a;
+}
+.top-bid-line a {
+  color: var(--pink);
+  font-weight: 700;
+}
+.clout-row {
+  background: linear-gradient(90deg, rgba(255, 215, 106, 0.05), transparent 70%);
+}
+.clout-row.top-bid {
+  background: linear-gradient(90deg, rgba(255, 215, 106, 0.16), rgba(255, 92, 225, 0.05));
+  box-shadow: inset 0 0 30px rgba(255, 215, 106, 0.08);
+}
+.clout-ava {
+  border-color: rgba(255, 215, 106, 0.5);
+  filter: drop-shadow(0 0 12px rgba(255, 215, 106, 0.45));
+}
+.paid-chip {
+  color: #0b0b12 !important;
+  background: linear-gradient(90deg, #ffd76a, #ff9f43) !important;
+  border: none !important;
+}
+.verified-chip {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+  border: 1px solid rgba(0, 245, 255, 0.4);
+  border-radius: 999px;
+  padding: 0.12rem 0.5rem;
+}
+.cash-text {
+  font-family: "Unbounded";
+  font-size: 0.95rem;
+  color: #ffd76a;
+  text-shadow: 0 0 14px rgba(255, 215, 106, 0.55);
+}
+.board-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 1.1rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.paid-flex-chip {
+  border-color: rgba(255, 215, 106, 0.6) !important;
+  color: #ffd76a !important;
+}
+.bid-modal {
+  width: min(520px, 100%);
+}
+.bid-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+.bid-tabs button {
+  font-family: "Space Grotesk";
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--dim);
+  border-radius: 999px;
+  padding: 0.55rem 0.4rem;
+  transition: 0.15s;
+  white-space: nowrap;
+}
+.bid-tabs button:hover {
+  border-color: var(--cyan);
+  color: #fff;
+}
+.bid-tabs button.sel {
+  background: var(--grad);
+  color: #0b0b12;
+  border-color: transparent;
+  font-weight: 800;
+}
+.bid-pane {
+  text-align: left;
+}
+.bid-teaser {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--dim);
+  border: 1px solid rgba(255, 215, 106, 0.3);
+  background: rgba(255, 215, 106, 0.06);
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  margin-bottom: 1.1rem;
+}
+.bid-teaser b {
+  color: #ffd76a;
+}
+.bid-pane .ava-grid {
+  margin-top: 0.4rem;
+}
+.tier-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.tier-grid button {
+  font-family: "Unbounded";
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.7rem 0.3rem;
+  transition: 0.12s;
+}
+.tier-grid button:hover {
+  border-color: #ffd76a;
+}
+.tier-grid button.sel {
+  border-color: #ffd76a;
+  background: rgba(255, 215, 106, 0.14);
+  color: #ffd76a;
+  box-shadow: 0 0 16px rgba(255, 215, 106, 0.3);
+}
+.amount-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+.amount-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+}
+.amount-input:focus {
+  border-color: #ffd76a;
+  box-shadow: 0 0 14px rgba(255, 215, 106, 0.25);
+}
+.min-note {
+  font-size: 0.68rem;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.slot-summary {
+  font-size: 0.8rem;
+  color: var(--dim);
+  line-height: 1.5;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1rem;
+}
+.slot-summary b {
+  color: #ffd76a;
+}
+.adult-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  text-align: left;
+  font-size: 0.75rem;
+  color: var(--dim);
+  margin: 1.1rem 0 0.7rem;
+  cursor: pointer;
+  line-height: 1.45;
+}
+.adult-row input {
+  margin-top: 0.15rem;
+  accent-color: var(--pink);
+  cursor: pointer;
+}
+.bid-note {
+  font-size: 0.68rem;
+  color: var(--dim);
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
 /* ---------- modal / toast / confetti ---------- */
 .overlay {
   position: fixed;
@@ -1041,5 +1285,18 @@ select {
   }
   .ava-grid {
     grid-template-columns: repeat(6, 1fr);
+  }
+  .cash-strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .bid-tabs {
+    grid-template-columns: 1fr;
+  }
+  .tier-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .board-divider {
+    font-size: 0.55rem;
   }
 }
