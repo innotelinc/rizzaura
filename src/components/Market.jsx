@@ -1,0 +1,42 @@
+import { MARKET } from "../data";
+import { useStore, fmt } from "../store";
+
+export default function Market() {
+  const { state, actions } = useStore();
+  return (
+    <section id="market">
+      <div className="sec-head">
+        <div className="tag">Aura Market</div>
+        <h2>
+          Spend Coins. <span className="grad-text">Gain Clout.</span>
+        </h2>
+        <p>
+          Earn coins by voting, battling, and answering the census. Then buy your way up the board.
+          💸
+        </p>
+      </div>
+      <div className="market-grid">
+        {MARKET.map((m) => {
+          const owned = state.owned.includes(m.id);
+          return (
+            <div className="market-card card" key={m.id}>
+              <span className="ico">{m.emoji}</span>
+              <h3>{m.name}</h3>
+              <p>{m.desc}</p>
+              {owned ? (
+                <span className="owned-tag">✅ OWNED</span>
+              ) : (
+                <span className="price">
+                  {fmt(m.price)} <small>COINS</small>
+                </span>
+              )}
+              <button className="btn ghost" disabled={owned} onClick={() => actions.buy(m.id)}>
+                {owned ? "Unlocked" : "Buy"}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

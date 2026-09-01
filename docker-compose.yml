@@ -1,0 +1,14 @@
+services:
+  rizz-aura:
+    build: .
+    image: rizz-aura:latest
+    container_name: rizz-aura
+    ports:
+      - "4173:4173"
+    volumes:
+      # named volume keeps data/state.json (votes, aura, battles) across restarts
+      - rizz-aura-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  rizz-aura-data:
