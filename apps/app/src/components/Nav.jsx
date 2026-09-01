@@ -1,4 +1,5 @@
 import { useStore } from "../store";
+import { SITE } from "../../../shared/urls";
 
 export default function Nav() {
   const { state, actions } = useStore();
@@ -35,10 +36,10 @@ export default function Nav() {
         >
           💰 Cash Shop
         </a>
-        <a href="https://rankings.rizzaura.net" target="_blank" rel="noreferrer">
+        <a href={SITE.rankings} target="_blank" rel="noreferrer">
           Rankings
         </a>
-        <a href="https://community.rizzaura.net" target="_blank" rel="noreferrer">
+        <a href={SITE.community} target="_blank" rel="noreferrer">
           Community
         </a>
         {state.me ? (

@@ -10,8 +10,10 @@ COPY apps/admin/package.json apps/admin/package.json
 RUN npm ci
 COPY apps ./apps
 
-ARG VITE_API_BASE=https://api.rizzaura.net
+ARG VITE_API_BASE=https://api.rizz.innotel.us
 ENV VITE_API_BASE=$VITE_API_BASE
+ARG VITE_BASE_DOMAIN=rizz.innotel.us
+ENV VITE_BASE_DOMAIN=$VITE_BASE_DOMAIN
 RUN npm run build -w apps/rankings
 
 # ---- runtime stage: nginx serves the SPA ----

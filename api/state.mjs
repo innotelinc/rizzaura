@@ -48,29 +48,36 @@ export const escapeHtml = (s) =>
   );
 
 /* ------------------------- user records ------------------------- */
+const USER_DEFAULTS = {
+  name: "",
+  email: "",
+  avatar: "😎",
+  aura: 100,
+  votesCast: 0,
+  battlesWon: 0,
+  censusVotes: 0,
+  goldenGifts: 0,
+  competitions: 0,
+  wins: 0,
+  prestige: 0,
+  hitNo1: false,
+  no1Days: 0,
+  no1Since: null,
+  teamId: null,
+  teamsFounded: 0,
+  teamSize: 0,
+  badges: [],
+};
+
 export function getUser(sub) {
   if (!sub) return null;
   if (!state.users[sub]) {
-    state.users[sub] = {
-      sub,
-      name: "",
-      email: "",
-      avatar: "😎",
-      joinedTs: Date.now(),
-      aura: 100,
-      votesCast: 0,
-      battlesWon: 0,
-      censusVotes: 0,
-      goldenGifts: 0,
-      competitions: 0,
-      wins: 0,
-      prestige: 0,
-      hitNo1: false,
-      no1Days: 0,
-      no1Since: null,
-      teamId: null,
-      badges: [],
-    };
+    // brand-new player
+    state.users[sub] = { sub, joinedTs: Date.now(), ...USER_DEFAULTS };
+  } else {
+    // existing player: merge defaults so new fields (badges, teams, ...)
+    // always exist even for records written by older versions.
+    state.users[sub] = { ...USER_DEFAULTS, ...state.users[sub], sub };
   }
   return state.users[sub];
 }

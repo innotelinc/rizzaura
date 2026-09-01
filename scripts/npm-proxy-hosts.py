@@ -33,7 +33,7 @@ Environment variables (real env wins, then the capstone .env, then defaults):
   NPM_ADMIN_EMAIL         NPM admin login email   (required unless NPM_API_TOKEN)
   NPM_ADMIN_PASSWORD      NPM admin login password(required unless NPM_API_TOKEN)
   NPM_API_TOKEN           persistent NPM API token (optional; skips login)
-  NPM_BASE_DOMAIN         base domain, e.g. capstone.innotel.us  (required)
+  NPM_BASE_DOMAIN         base domain, e.g. rizz.innotel.us  (required)
   NPM_UPSTREAM_HOST       Docker host IP NPM forwards to
                           (default: PJSIP_MEDIA_ADDRESS from .env)
   NPM_LETSENCRYPT_EMAIL   email for Let's Encrypt certs
@@ -67,8 +67,8 @@ Subdomains (each service gets <sub>.<NPM_BASE_DOMAIN>):
   api.<domain>          Platform API (OIDC, SSE, Stripe, AI)     :8000
   auth.<domain>         Authentik (SSO / user management)        :9000
 
-The old single-origin host (rizzaura.net apex serving the old monolith) is
-pruned as stale on the next run — pass --no-prune to keep it around.
+The old single-origin host (<base> apex serving the old monolith) is pruned
+as stale on the next run — pass --no-prune to keep it around.
 """
 
 from __future__ import annotations
@@ -264,7 +264,7 @@ def main() -> int:
     parser.add_argument("--email", default=None, help="NPM admin email (env NPM_ADMIN_EMAIL)")
     parser.add_argument("--password", default=None, help="NPM admin password (env NPM_ADMIN_PASSWORD)")
     parser.add_argument("--api-token", default=None, help="persistent NPM API token (env NPM_API_TOKEN)")
-    parser.add_argument("--base-domain", default=None, help="base domain, e.g. capstone.innotel.us (env NPM_BASE_DOMAIN)")
+    parser.add_argument("--base-domain", default=None, help="base domain, e.g. rizz.innotel.us (env NPM_BASE_DOMAIN)")
     parser.add_argument("--upstream-host", default=None, help="Docker host IP NPM forwards to (env NPM_UPSTREAM_HOST)")
     parser.add_argument("--letsencrypt-email", default=None, help="email for Let's Encrypt certs (env NPM_LETSENCRYPT_EMAIL)")
     parser.add_argument("--wildcard", action="store_true",
@@ -292,7 +292,7 @@ def main() -> int:
     include_raw = (args.include_optional or cfg(args, "NPM_INCLUDE_OPTIONAL", "")).lower()
 
     if not base_domain:
-        print("FAIL NPM_BASE_DOMAIN is empty — set it in .env (e.g. capstone.innotel.us)", file=sys.stderr)
+        print("FAIL NPM_BASE_DOMAIN is empty — set it in .env (e.g. rizz.innotel.us)", file=sys.stderr)
         return 1
     if not upstream:
         print("FAIL NPM_UPSTREAM_HOST (or PJSIP_MEDIA_ADDRESS) is empty — set the Docker host IP in .env", file=sys.stderr)

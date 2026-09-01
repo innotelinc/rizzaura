@@ -73,15 +73,32 @@ else
     sed -i "s|^AUTHENTIK_POSTGRES_PASSWORD=.*|AUTHENTIK_POSTGRES_PASSWORD=$(openssl rand -hex 16)|" "$ENV_FILE"
     sed -i "s|^AUTHENTIK_REDIS_PASSWORD=.*|AUTHENTIK_REDIS_PASSWORD=$(openssl rand -hex 16)|" "$ENV_FILE"
     sed -i "s|^AUTHENTIK_BOOTSTRAP_PASSWORD=.*|AUTHENTIK_BOOTSTRAP_PASSWORD=$(openssl rand -base64 18 | tr -d '/+=')|" "$ENV_FILE"
-    pass "secrets written"
+    sed -i "s|^OMNIROUTE_JWT_SECRET=.*|OMNIROUTE_JWT_SECRET=$(openssl rand -base64 48)|" "$ENV_FILE"
+    sed -i "s|^OMNIROUTE_API_KEY_SECRET=.*|OMNIROUTE_API_KEY_SECRET=$(openssl rand -hex 32)|" "$ENV_FILE"
+    sed -i "s|^OMNIROUTE_INITIAL_PASSWORD=.*|OMNIROUTE_INITIAL_PASSWORD=$(openssl rand -base64 18 | tr -d '/+=')|" "$ENV_FILE"
+    sed -i "s|^OMNIROUTE_WS_BRIDGE_SECRET=.*|OMNIROUTE_WS_BRIDGE_SECRET=$(openssl rand -base64 32)|" "$ENV_FILE"
+    # Derive the public URLs from BASE_DOMAIN so the whole platform follows
+    # one setting (e.g. rizz.innotel.us now, rizzaura.net after DNS moves).
+    BASE=$(grep '^BASE_DOMAIN=' "$ENV_FILE" | cut -d= -f2)
+    sed -i "s|^# APP_URL=.*|APP_URL=https://app.${BASE}|" "$ENV_FILE"
+    sed -i "s|^# API_URL=.*|API_URL=https://api.${BASE}|" "$ENV_FILE"
+    sed -i "s|^# APP_ORIGINS=.*|APP_ORIGINS=https://app.${BASE},https://rankings.${BASE},https://community.${BASE},https://admin.${BASE}|" "$ENV_FILE"
+    pass "secrets written (base domain: ${BASE})"
 fi
 set -a; source "$ENV_FILE"; set +a
 
 # ═══ 3. Boot the stack ═════════════════════════════════════════════
 echo ""
 echo "── 3. Boot stack ──"
+# OmniRoute (LLM API proxy) is opt-in: enable the "ai" compose profile when
+# its secrets are configured so the AI recommendations have a live endpoint.
+COMPOSE_PROFILES=()
+if [ -n "${OMNIROUTE_INITIAL_PASSWORD:-}" ] && [[ "${OMNIROUTE_INITIAL_PASSWORD}" != change-me* ]]; then
+    COMPOSE_PROFILES=(--profile ai)
+    pass "OmniRoute profile enabled (AI gateway on :20128)"
+fi
 COMPOSE_LOG=$(mktemp)
-if ! docker compose --env-file "$ENV_FILE" -f "$REPO/docker-compose.yml" up -d --build >"$COMPOSE_LOG" 2>&1; then
+if ! docker compose --env-file "$ENV_FILE" -f "$REPO/docker-compose.yml" "${COMPOSE_PROFILES[@]}" up -d --build >"$COMPOSE_LOG" 2>&1; then
     cat "$COMPOSE_LOG" >&2
     rm -f "$COMPOSE_LOG"
     fail "Docker Compose failed to boot the stack"
@@ -124,11 +141,51 @@ if grep -q "^AUTHENTIK_CLIENT_ID=." "$ENV_FILE"; then
     pass "api restarted with Authentik client credentials"
 fi
 
+# ═══ 6b. OmniRoute — mint the API key and wire it into AI_API_KEY ══════════
+echo ""
+echo "── 6b. OmniRoute API key ──"
+if [ -n "${OMNIROUTE_INITIAL_PASSWORD:-}" ] && [[ "${OMNIROUTE_INITIAL_PASSWORD}" != change-me* ]]; then
+    if [ -n "${OMNIROUTE_API_KEY:-}" ] && curl -sf -H "Authorization: Bearer ${OMNIROUTE_API_KEY}" "http://127.0.0.1:20128/v1/models" >/dev/null 2>&1; then
+        pass "OMNIROUTE_API_KEY already valid"
+    else
+        COOKIE_FILE=$(mktemp)
+        curl -sf -c "$COOKIE_FILE" -X POST "http://127.0.0.1:20128/api/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"password\":\"${OMNIROUTE_INITIAL_PASSWORD}\"}" >/dev/null 2>&1 || {
+            rm -f "$COOKIE_FILE"
+            warn "OmniRoute login failed — is it up? Check: docker compose --profile ai ps"
+        }
+        KEY_RESP=$(curl -sf -X POST "http://127.0.0.1:20128/api/keys" \
+            -b "$COOKIE_FILE" -H "Content-Type: application/json" \
+            -d '{"name":"rizz-aura-ai"}' 2>/dev/null || true)
+        rm -f "$COOKIE_FILE"
+        KEY=$(echo "$KEY_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('key',''))" 2>/dev/null || true)
+        if [ -n "$KEY" ]; then
+            if grep -q "^OMNIROUTE_API_KEY=" "$ENV_FILE"; then
+                sed -i "s|^OMNIROUTE_API_KEY=.*|OMNIROUTE_API_KEY=$KEY|" "$ENV_FILE"
+            else
+                printf 'OMNIROUTE_API_KEY=%s\n' "$KEY" >> "$ENV_FILE"
+            fi
+            if [ -z "${AI_API_KEY:-}" ] || [[ "${AI_API_KEY}" == change-me* ]]; then
+                sed -i "s|^AI_API_KEY=.*|AI_API_KEY=$KEY|" "$ENV_FILE"
+                pass "minted OmniRoute key → AI_API_KEY wired"
+            else
+                pass "minted OmniRoute key (AI_API_KEY left as-is)"
+            fi
+            docker compose --env-file "$ENV_FILE" -f "$REPO/docker-compose.yml" up -d --force-recreate api 2>&1 | tail -1
+        else
+            warn "OmniRoute key mint failed — set AI_API_KEY manually (OmniRoute dashboard → Settings → API Keys)"
+        fi
+    fi
+else
+    warn "OMNIROUTE_INITIAL_PASSWORD unset — skipping OmniRoute key minting (AI falls back to rules)"
+fi
+
 # ═══ 7. NPM proxy hosts (optional) ═════════════════════════════════
 echo ""
 echo "── 7. NPM proxy hosts (optional) ──"
 # Creates/updates the 6 proxy hosts (app, api, auth, rankings, community,
-# admin) + ONE wildcard *.rizzaura.net certificate via DNS-01. Set
+# admin) + ONE wildcard *.<BASE_DOMAIN> certificate via DNS-01. Set
 # NPM_DNS_PROVIDER=rfc2136 and NPM_DNS_PROVIDER_CREDENTIALS=<NPM credential id>
 # for TSIG-based wildcard issuance. NPM itself runs outside this stack
 # (usually port 81) — skipped with a WARN when unreachable/unconfigured.
@@ -154,6 +211,8 @@ echo "  /api/me → $ME"
 SEASON=$(curl -sf "http://127.0.0.1:${API_PORT}/api/seasons" 2>/dev/null | head -c 120 || true)
 echo "  /api/seasons → $SEASON"
 echo ""
+BASE="${BASE_DOMAIN:-rizz.innotel.us}"
 pass "Setup complete. Point Nginx Proxy Manager at this host and visit:"
-echo "    https://app.rizzaura.net (main app) · https://rankings.rizzaura.net · https://community.rizzaura.net"
-echo "    https://admin.rizzaura.net (admins) · https://api.rizzaura.net · https://auth.rizzaura.net (Authentik)"
+echo "    https://app.${BASE} (main app) · https://rankings.${BASE} · https://community.${BASE}"
+echo "    https://admin.${BASE} (admins) · https://api.${BASE} · https://auth.${BASE} (Authentik)"
+echo "    AI gateway (if enabled): http://<host>:20128 (OmniRoute)"

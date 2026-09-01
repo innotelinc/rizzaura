@@ -3,14 +3,19 @@
 #
 # Every service runs in Docker. Nginx Proxy Manager is NOT started here — it
 # runs outside this stack (usually on port 81) and is provisioned through its
-# REST API by scripts/npm-proxy-hosts.py (run by setup.sh). Subdomains:
+# REST API by scripts/npm-proxy-hosts.py (run by setup.sh).
 #
-#   app.rizzaura.net        → app        (3010)
-#   rankings.rizzaura.net   → rankings  (3011)
-#   community.rizzaura.net  → community (3012)
-#   admin.rizzaura.net      → admin     (3013)
-#   api.rizzaura.net        → api       (8000)
-#   auth.rizzaura.net       → authentik (9000)
+# The domain is fully customizable via BASE_DOMAIN in .env (default
+# rizz.innotel.us; switch to rizzaura.net once DNS propagates). Every URL
+# below derives from it:
+#
+#   app.<domain>        → app        (3010)
+#   rankings.<domain>   → rankings  (3011)
+#   community.<domain>  → community (3012)
+#   admin.<domain>      → admin     (3013)
+#   api.<domain>        → api       (8000)
+#   auth.<domain>       → authentik (9000)
+#   (optional profile "ai": OmniRoute LLM API proxy on 20128)
 # ──────────────────────────────────────────────────────────────────────────────
 name: rizzaura
 
@@ -24,6 +29,7 @@ volumes:
   authentik_redis:
   authentik_media:
   authentik_templates:
+  omniroute_data:
 
 services:
   # ── Platform API ──────────────────────────────────────────────────────────
@@ -37,20 +43,23 @@ services:
       - "8000:8000" # NPM proxy target (api.<domain>)
     environment:
       PORT: "8000"
-      APP_URL: "${APP_URL:-https://app.rizzaura.net}"
-      API_URL: "${API_URL:-https://api.rizzaura.net}"
-      APP_ORIGINS: "${APP_ORIGINS:-https://app.rizzaura.net,https://rankings.rizzaura.net,https://community.rizzaura.net,https://admin.rizzaura.net}"
+      BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
+      APP_URL: "${APP_URL:-https://app.${BASE_DOMAIN:-rizz.innotel.us}}"
+      API_URL: "${API_URL:-https://api.${BASE_DOMAIN:-rizz.innotel.us}}"
+      APP_ORIGINS: "${APP_ORIGINS:-https://app.${BASE_DOMAIN:-rizz.innotel.us},https://rankings.${BASE_DOMAIN:-rizz.innotel.us},https://community.${BASE_DOMAIN:-rizz.innotel.us},https://admin.${BASE_DOMAIN:-rizz.innotel.us}}"
       SESSION_SECRET: "${SESSION_SECRET:-change-me}"
       # Authentik SSO (auth.<domain>)
-      AUTHENTIK_ISSUER: "${AUTHENTIK_ISSUER:-https://auth.rizzaura.net}"
+      AUTHENTIK_ISSUER: "${AUTHENTIK_ISSUER:-https://auth.${BASE_DOMAIN:-rizz.innotel.us}}"
       AUTHENTIK_CLIENT_ID: "${AUTHENTIK_CLIENT_ID:-}"
       AUTHENTIK_CLIENT_SECRET: "${AUTHENTIK_CLIENT_SECRET:-}"
       AUTHENTIK_ADMIN_GROUP: "${AUTHENTIK_ADMIN_GROUP:-rizz-aura-admins}"
       # Cash Shop (Stripe)
       STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY:-}"
       STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET:-}"
-      # AI achievement recommendations (OpenAI-compatible endpoint)
-      AI_BASE_URL: "${AI_BASE_URL:-https://api.openai.com/v1}"
+      # AI achievement recommendations — OmniRoute (OpenAI-compatible LLM API
+      # proxy, profile "ai" below) by default; any OpenAI-compatible endpoint
+      # works (OpenAI, Groq, Together, Ollama, ...).
+      AI_BASE_URL: "${AI_BASE_URL:-http://omniroute:20128/v1}"
       AI_API_KEY: "${AI_API_KEY:-}"
       AI_MODEL: "${AI_MODEL:-gpt-4o-mini}"
     volumes:
@@ -73,7 +82,8 @@ services:
       context: .
       dockerfile: apps/app/Dockerfile
       args:
-        VITE_API_BASE: "${VITE_API_BASE:-https://api.rizzaura.net}"
+        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizz.innotel.us}}"
+        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
     container_name: rizz-app
     restart: unless-stopped
     ports:
@@ -86,7 +96,8 @@ services:
       context: .
       dockerfile: apps/rankings/Dockerfile
       args:
-        VITE_API_BASE: "${VITE_API_BASE:-https://api.rizzaura.net}"
+        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizz.innotel.us}}"
+        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
     container_name: rizz-rankings
     restart: unless-stopped
     ports:
@@ -99,7 +110,8 @@ services:
       context: .
       dockerfile: apps/community/Dockerfile
       args:
-        VITE_API_BASE: "${VITE_API_BASE:-https://api.rizzaura.net}"
+        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizz.innotel.us}}"
+        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
     container_name: rizz-community
     restart: unless-stopped
     ports:
@@ -112,12 +124,36 @@ services:
       context: .
       dockerfile: apps/admin/Dockerfile
       args:
-        VITE_API_BASE: "${VITE_API_BASE:-https://api.rizzaura.net}"
+        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizz.innotel.us}}"
+        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
     container_name: rizz-admin
     restart: unless-stopped
     ports:
       - "3013:3013"
     depends_on: [api]
+    networks: [rizz-net]
+
+  # ── OmniRoute — self-hosted LLM API proxy for the AI recommendations ──────
+  # OpenAI-compatible at http://omniroute:20128/v1. Opt-in via profile so the
+  # default stack stays lean: `docker compose --profile ai up -d`. setup.sh
+  # boots it when OMNIROUTE_INITIAL_PASSWORD is set and mints the API key.
+  omniroute:
+    image: ${OMNIROUTE_IMAGE:-diegosouzapw/omniroute:latest}
+    container_name: omniroute
+    restart: unless-stopped
+    profiles: ["ai"]
+    environment:
+      DATA_DIR: /app/data
+      PORT: "20128"
+      DASHBOARD_PORT: "20128"
+      JWT_SECRET: "${OMNIROUTE_JWT_SECRET:-change-me-omniroute-jwt}"
+      API_KEY_SECRET: "${OMNIROUTE_API_KEY_SECRET:-change-me-omniroute-api-key}"
+      INITIAL_PASSWORD: "${OMNIROUTE_INITIAL_PASSWORD:-change-me-omniroute-admin}"
+      OMNIROUTE_WS_BRIDGE_SECRET: "${OMNIROUTE_WS_BRIDGE_SECRET:-change-me-omniroute-ws}"
+    ports:
+      - "20128:20128"
+    volumes:
+      - omniroute_data:/app/data
     networks: [rizz-net]
 
   # ── Authentik — identity provider + SSO (auth.<domain>) ───────────────────
@@ -175,8 +211,8 @@ services:
       AUTHENTIK_POSTGRESQL__PASSWORD: "${AUTHENTIK_POSTGRES_PASSWORD:?}"
       AUTHENTIK_REDIS__HOST: authentik-redis
       AUTHENTIK_REDIS__PASSWORD: "${AUTHENTIK_REDIS_PASSWORD:?}"
-      AUTHENTIK_PUBLIC_URL: "${AUTHENTIK_PUBLIC_URL:-https://auth.rizzaura.net}"
-      AUTHENTIK_BOOTSTRAP_EMAIL: "${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@rizzaura.net}"
+      AUTHENTIK_PUBLIC_URL: "${AUTHENTIK_PUBLIC_URL:-https://auth.${BASE_DOMAIN:-rizz.innotel.us}}"
+      AUTHENTIK_BOOTSTRAP_EMAIL: "${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@rizz.innotel.us}"
       AUTHENTIK_BOOTSTRAP_PASSWORD: "${AUTHENTIK_BOOTSTRAP_PASSWORD:-}"
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
       AUTHENTIK_DEFAULT_TOKEN_LENGTH: "48"
@@ -208,7 +244,7 @@ services:
       AUTHENTIK_POSTGRESQL__PASSWORD: "${AUTHENTIK_POSTGRES_PASSWORD:?}"
       AUTHENTIK_REDIS__HOST: authentik-redis
       AUTHENTIK_REDIS__PASSWORD: "${AUTHENTIK_REDIS_PASSWORD:?}"
-      AUTHENTIK_PUBLIC_URL: "${AUTHENTIK_PUBLIC_URL:-https://auth.rizzaura.net}"
+      AUTHENTIK_PUBLIC_URL: "${AUTHENTIK_PUBLIC_URL:-https://auth.${BASE_DOMAIN:-rizz.innotel.us}}"
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
     volumes:
       - authentik_media:/media
