@@ -1,0 +1,114 @@
+# release.yml — Rizz Aura release pipeline.
+#
+# Fires on every `v*` tag push:
+#   1. build-and-publish — builds all five platform images and publishes them
+#      to GHCR under the repository's own namespace (ghcr.io/<owner>/<repo>/<image>)
+#      tagged with the release version (+ :latest).
+#   2. release-artifacts — bundles each service's dist + the source tree and
+#      attaches them to the GitHub Release for the pushed tag.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: rizzaura-release
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: ${{ github.repository }}
+
+jobs:
+  build-and-publish:
+    name: Build & publish Docker images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [api, app, rankings, community, admin]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.service == 'api' && 'api/Dockerfile' || format('apps/{0}/Dockerfile', matrix.service) }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release-artifacts:
+    name: Generate release artifacts
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install & build all services
+        run: |
+          npm ci
+          npm run build
+
+      - name: Bundle release artifacts
+        run: ./scripts/build-release-artifacts.sh
+
+      - name: Attach artifacts to the release
+        run: |
+          NOTES=$(cat <<NOTESEOF
+          Rizz Aura **$VERSION** — Global Leaderboard Platform.
+
+          **Artifacts**
+          - \`rizzaura-platform-$VERSION-source.tar.gz\` (full source) + \`SHA256SUMS\`
+          - Per-service dist bundles: \`dist/app/\`, \`dist/rankings/\`, \`dist/community/\`, \`dist/admin/\`
+
+          **Docker images** (published to GHCR by this run):
+          \`ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}\`, \`app\`, \`rankings\`, \`community\`, \`admin\` (each also tagged \`:latest\`).
+          NOTESEOF
+          )
+          gh release create "$VERSION" \
+            dist/release/rizzaura-platform-$VERSION-source.tar.gz \
+            dist/release/SHA256SUMS \
+            dist/release/dist-app.tar.gz \
+            dist/release/dist-rankings.tar.gz \
+            dist/release/dist-community.tar.gz \
+            dist/release/dist-admin.tar.gz \
+            --title "Rizz Aura $VERSION" \
+            --notes "$NOTES" || \
+          gh release upload "$VERSION" \
+            dist/release/rizzaura-platform-$VERSION-source.tar.gz \
+            dist/release/SHA256SUMS \
+            dist/release/dist-app.tar.gz \
+            dist/release/dist-rankings.tar.gz \
+            dist/release/dist-community.tar.gz \
+            dist/release/dist-admin.tar.gz --clobber
+          echo "::notice::release artifacts attached to $VERSION"

@@ -1,4 +1,13 @@
 node_modules
-dist
+.git
 data
+dist
+apps/*/dist
+.env
+.env.*
+!.env.example
 *.log
+.github
+README.md
+docker-compose.yml
+scripts
