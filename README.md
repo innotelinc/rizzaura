@@ -1,175 +1,227 @@
-# Rizz Aura 🔥
+# Rizz Aura — Global Leaderboard Platform 🔥
 
-The global aura leaderboard. Rank creators, brands, streamers, athletes, and your friends —
-earn clout, collect aura, and prove who's really the main character. Or skip the grind and
-**buy the board**: paid slots rank at the top of the leaderboard, outbid.lol style —
-**rank is what you pay.** 💰
+The self-hosted aura leaderboard platform. Rank creators, brands, streamers,
+athletes, and your friends — earn clout, collect aura, form teams, win
+competitions, and prove who's really the main character. Real-time
+leaderboards, achievements and badges, seasonal championships, a Hall of Fame,
+and AI-powered achievement recommendations. Or skip the grind and **buy the
+board**: paid slots rank at the top, outbid.lol style — **rank is what you
+pay.** 💰
 
 "Got Aura? Prove It. Got Cash? Prove It Faster."
 
-## Stack
+## Architecture
 
-- **Frontend:** React 18 + Vite 5 (`src/`)
-- **Backend:** plain Node `http` server (`server.mjs`) — serves `dist/` + the `/api` JSON API
-- **State:** a single `data/state.json` file (votes, aura deltas, battles, census, feed, bids)
-- **Payments:** Stripe Checkout via Stripe's REST API over `fetch` — still zero npm deps
-- **Tooling:** ESLint (flat config) + Prettier
+Six services, each its own Docker image and its own subdomain, fronted by
+Nginx Proxy Manager:
 
-No database, no framework. One Node process is the whole app.
+| Service       | URL                      | Port | What it is                                                    |
+| ------------- | ------------------------ | ---- | ------------------------------------------------------------- |
+| **app**       | `app.rizzaura.net`       | 3010 | Main app: battles, census, market, cash shop, profile         |
+| **rankings**  | `rankings.rizzaura.net`  | 3011 | Real-time leaderboards, seasons, Hall of Fame, prestige       |
+| **community** | `community.rizzaura.net` | 3012 | Live feed, teams, competitions, census                        |
+| **admin**     | `admin.rizzaura.net`     | 3013 | Admin control center (Authentik `rizz-aura-admins` role only) |
+| **api**       | `api.rizzaura.net`       | 8000 | Zero-dependency Node API: OIDC SSO, SSE, Stripe, AI, state    |
+| **auth**      | `auth.rizzaura.net`      | 9000 | Authentik — identity provider + SSO for every service         |
 
-## Cash Shop 💰 (monetization)
+```
+Browser ──► Nginx Proxy Manager (wildcard *.rizzaura.net TLS)
+                 ├─► app / rankings / community / admin  (nginx SPA containers)
+                 ├─► api       (Node, zero deps, SSE real-time)
+                 └─► auth      (Authentik: server + worker + postgres + redis)
+```
 
-Three real-money products, all handled by Stripe Checkout (hosted payment page, no card data
-ever touches this server):
+- **Frontend:** four independent React 18 + Vite 5 SPAs (`apps/`), sharing a
+  design system in `apps/shared/`. Each is a separate nginx container.
+- **Backend:** plain Node `http` server (`api/`) — no runtime dependencies.
+  State lives in a single `data/state.json` (votes, aura, bids, achievements,
+  seasons, teams, competitions).
+- **Real-time:** Server-Sent Events (`/api/events`) push snapshots + discrete
+  events; every frontend falls back to polling when the stream drops.
+- **SSO:** Authentik OIDC (authorization-code flow, signed HttpOnly session
+  cookies, role-gated admin).
+- **Payments:** Stripe Checkout via REST over `fetch`.
 
-| Product                  | Price          | What you get                                                                                                                                                      |
-| ------------------------ | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Board Slot**           | $3+ (you pick) | A slot at the TOP of the Aura Leaderboard. Slots sort by amount paid — outbid everyone to become #1, above every celebrity. Ships with the ✓ Aura Verified badge. |
-| **Cash Golden Upvote**   | $2             | +500 Aura to any celebrity, with a public feed shoutout.                                                                                                          |
-| **Permanent Flex Frame** | $5             | Permanent golden glow around your profile card.                                                                                                                   |
+## Features
 
-### Stripe setup
-
-1. Create a Stripe account at https://dashboard.stripe.com (test mode is fine for dev).
-2. Copy `.env.example` to `.env` and fill in:
-   - `STRIPE_SECRET_KEY` — from https://dashboard.stripe.com/apikeys (`sk_test_...`)
-   - `STRIPE_WEBHOOK_SECRET` — create a webhook endpoint → `https://<your-host>/api/webhook`,
-     event `checkout.session.completed`, then copy its `whsec_...` signing secret
-   - `APP_URL` — your public URL (http://localhost:4173 for local dev)
-3. For local webhook testing, the Stripe CLI is easiest:
-   ```bash
-   stripe listen --forward-to localhost:4173/api/webhook
-   ```
-   then buy something in the Cash Shop and watch the bid land on the board.
-
-The Cash Shop degrades gracefully: without keys, `/api/checkout` returns `not_configured` and
-buyers just get a friendly "not live yet 💀" toast. A few demo bids are seeded into
-`data/state.json` so the board looks alive pre-launch — delete them from that file anytime.
-
-> Paid spots are fan hype, not endorsements, and are separate from the vote-driven free board.
-> All aura is fictional. Stripe requires buyers to be 18+ (there's a checkbox).
+- **Real-time leaderboards** — SSE-driven global + paid board, live updates.
+- **Achievements & badges** — 18 badges across bronze/silver/gold/platinum
+  tiers, auto-evaluated as you play.
+- **Seasonal rankings** — 28-day seasons; the top 20 personalities and top 10
+  players are immortalized in the Hall of Fame each rollover.
+- **Hall of Fame & prestige** — season snapshots forever; finishing top 10
+  earns prestige and the Hall of Famer badge.
+- **AI-powered achievement recommendations** — an OpenAI-compatible endpoint
+  (OpenAI, Groq, Together, or self-hosted Ollama) suggests which badges to
+  chase, with a rule-based fallback when no key is configured.
+- **Teams & competitions** — form teams, join live competitions, and win the
+  platform championship.
+- **Cash Shop** — Board Slots, Cash Golden Upvotes, Permanent Flex Frames via
+  Stripe Checkout.
 
 ## Quick start (development)
 
-You need two terminals — the API server on `:4173` and the Vite dev server on `:5173` (which
-proxies `/api` to the API server):
+You need the API on `:8000` and one or more Vite dev servers:
 
 ```bash
 npm install
-npm run serve   # terminal 1: API + static server → http://localhost:4173
-npm run dev     # terminal 2: Vite dev server → http://localhost:5173
+npm run serve        # terminal 1: platform API → http://localhost:8000
+npm run dev          # terminal 2: main app → http://localhost:5173
+npm run dev:rankings # terminal 3: rankings → http://localhost:5174 (optional)
+npm run dev:community# terminal 4: community → http://localhost:5175 (optional)
+npm run dev:admin    # terminal 5: admin → http://localhost:5176 (optional)
 ```
 
-Open http://localhost:5173 — edits hot-reload.
+Each dev server proxies `/api` to the API, so everything works anonymously.
+SSO needs Authentik + a provisioned OIDC client — see below.
 
-## Production
+## Deploy (Docker + Authentik + NPM)
 
 ```bash
-npm run build   # compile the React app into dist/
-npm run serve   # serve dist/ + API on :4173
+git clone https://github.com/innotelinc/rizzaura-platform.git && cd rizzaura-platform
+./scripts/setup.sh
 ```
 
-The server has zero runtime npm dependencies, so the container is tiny.
+`setup.sh` (idempotent) does everything:
 
-## Docker
+1. Generates `.env` from `.env.example` with fresh secrets
+2. Builds & boots the stack — `docker compose up -d --build`
+3. Provisions Authentik (`scripts/provision-authentik.py`): creates the
+   **Rizz Aura SSO** OIDC provider (redirect → `api.rizzaura.net/api/auth/callback`),
+   the **Rizz Aura** application, and the `rizz-aura-admins` group, then writes
+   `AUTHENTIK_CLIENT_ID/SECRET` into `.env` and restarts the API
+4. Provisions Nginx Proxy Manager (`scripts/npm-proxy-hosts.py`) — the six
+   proxy hosts + **one wildcard `*.rizzaura.net` certificate** via DNS-01
+5. Smoke-tests `/api/state`, `/api/me`, `/api/seasons`
 
-```bash
-docker build -t rizz-aura .
-docker run -d -p 4173:4173 -v rizz-aura-data:/app/data rizz-aura
+### Wildcard SSL with TSIG
+
+NPM issues wildcard certificates through DNS-01. For a TSIG/RFC2136
+dynamic-DNS setup (e.g. a private BIND master), save the **rfc2136** provider
+in NPM → Credentials (TSIG key name, key secret, algorithm, server), note its
+credential id, and set:
+
+```
+NPM_WILDCARD_CERT=1
+NPM_DNS_PROVIDER=rfc2136
+NPM_DNS_PROVIDER_CREDENTIALS=<credential id from NPM>
 ```
 
-Or with Compose (one command, volume included):
+`npm-proxy-hosts.py` then requests one Let's Encrypt cert for
+`*.rizzaura.net + rizzaura.net` and attaches it to every host. Re-run
+`./scripts/setup.sh` (or the script directly) to sync.
+
+### Manual compose
 
 ```bash
-docker compose up -d        # build + start → http://localhost:4173
-docker compose down         # stop (keeps the rizz-aura-data volume)
-docker compose down -v      # stop and wipe state
+cp .env.example .env   # fill in secrets (or run setup.sh)
+docker compose up -d --build
+python3 scripts/provision-authentik.py   # creates OIDC provider + admin group
+docker compose up -d --force-recreate api
+python3 scripts/npm-proxy-hosts.py --wildcard --dns-provider rfc2136 \
+    --dns-credentials <id>               # when NPM + DNS creds are ready
 ```
 
-`data/state.json` lives in the named volume, so votes and aura survive restarts.
-The image runs as a non-root user and includes a `HEALTHCHECK` against `/api/state`.
+Nginx Proxy Manager itself runs **outside** this compose file (usually port 81) — the stack never starts it, and `npm-proxy-hosts.py` talks to it over the
+REST API (`NPM_API_URL`, default `http://127.0.0.1:81`).
 
-## Deploying behind Nginx Proxy Manager (rizzaura.net)
+## Authentik (SSO)
 
-The whole app is one origin on one port, so you need exactly **one proxy host**:
+- Bootstrap admin: `admin@rizzaura.net` / `AUTHENTIK_BOOTSTRAP_PASSWORD` (in `.env`).
+- The API is the single OIDC client; every frontend redirects to
+  `api.rizzaura.net/api/auth/login?next=<origin>`.
+- Add users to the **rizz-aura-admins** group to grant admin panel access.
+- Admin groups come from Authentik's groups scope; sessions are HttpOnly,
+  HMAC-signed cookies (`SESSION_SECRET`).
 
-| Setting            | Value                                              |
-| ------------------ | -------------------------------------------------- |
-| Domain Names       | `rizzaura.net` + `www.rizzaura.net` (one cert)     |
-| Scheme             | `https` (request a Let's Encrypt cert in NPM)      |
-| Forward Hostname   | `127.0.0.1` (app on host) or container name / host |
-| Forward Port       | `4173`                                             |
-| WebSockets Support | OFF (the app polls over HTTP)                      |
-| Locations          | none — catch-all. No separate `/api` block.        |
+Without `AUTHENTIK_CLIENT_ID/SECRET` everything still works anonymously —
+SSO is additive.
 
-- **NPM on the host, app in Docker:** bind the app to localhost only — change the compose
-  ports mapping to `"127.0.0.1:4173:4173"` — and forward to `127.0.0.1:4173`.
-- **Both in Docker:** put them on the same Docker network and forward to the container name
-  (`rizz-aura`) on port `4173` instead of an IP.
-- **Stripe webhook:** a path on the main host — `https://rizzaura.net/api/webhook`. No extra
-  proxy host, no `/api` location.
-- `.env` must have `APP_URL=https://rizzaura.net` so Stripe redirects buyers back correctly.
-- Client IP for vote limits comes from `cf-connecting-ip` → `x-forwarded-for` → socket IP,
-  so it works behind NPM and/or Cloudflare unchanged.
+## CI / CD
 
-## CI
-
-`.github/workflows/docker-image.yml` builds the Docker image on every push/PR, and on the
-default branch and version tags it also pushes the image to GitHub Container Registry
-(`ghcr.io/<owner>/<repo>`). Pull it with:
+- `.github/workflows/build-and-publish.yml` — builds all five images on every
+  push/PR to `main` and on `v*` tags; publishes to
+  `ghcr.io/innotelinc/rizzaura-platform/<service>` (`:latest` + tag) on the
+  default branch and tags.
+- `.github/workflows/release.yml` — on every `v*` tag: publishes images **and**
+  creates a GitHub Release with the source bundle + per-service dist bundles +
+  checksums.
 
 ```bash
-docker pull ghcr.io/<owner>/<repo>:latest
+git tag -a v2.0.0 -m "Rizz Aura v2.0.0"
+git push origin v2.0.0     # images publish + release artifacts attach
 ```
 
 ## API
 
-All endpoints are JSON. The dev server proxies `/api` to `:4173`; in production the same
-server handles both.
+All endpoints are JSON under `/api`. The dev servers proxy to `:8000`; in
+production the frontends talk to `api.rizzaura.net` directly (CORS with
+credentials).
 
-| Endpoint          | Method | Description                                                                            |
-| ----------------- | ------ | -------------------------------------------------------------------------------------- |
-| `/api/state`      | GET    | Public state: aura deltas, census counts, feed, battle, player count                   |     | `/api/claim` | POST | Claim your aura + enter the leaderboard (`{ name }`) |
-| `/api/vote`       | POST   | Up/downvote a personality (`{ id, dir }`, 10 votes/IP/day)                             |
-| `/api/voterefill` | POST   | Refill today's votes                                                                   |
-| `/api/battle`     | POST   | Decide the current battle (`{ winnerId }`)                                             |
-| `/api/census`     | POST   | Vote in a census question (`{ qid, option }`)                                          |
-| `/api/golden`     | POST   | Golden Upvote: +250 aura to a personality (`{ target, name }`)                         |
-| `/api/checkout`   | POST   | Create a Stripe Checkout session (`{ product: slot\|golden\|frame, ... }`) → `{ url }` |
-| `/api/webhook`    | POST   | Stripe webhook (`checkout.session.completed`) — verifies & applies orders              |
-| `/api/order/:id`  | GET    | Look up a paid order by Checkout session id (used after redirect)                      |
+| Endpoint                          | Method   | Description                                                          |
+| --------------------------------- | -------- | -------------------------------------------------------------------- |
+| `/api/state`                      | GET      | Public state: roster, aura, feed, battle, season, bids, teams, comps |
+| `/api/events`                     | GET      | **SSE** real-time stream (snapshots + aura/battle/badge/bid events)  |
+| `/api/me`                         | GET      | Current session (`{user}` or `{anon:true}`)                          |
+| `/api/auth/login`                 | GET      | Redirect to Authentik (`?next=` allowed origin)                      |
+| `/api/auth/callback`              | GET      | OIDC code exchange → session cookie → redirect back                  |
+| `/api/auth/logout`                | GET      | Clear session, redirect to Authentik end-session                     |
+| `/api/claim`                      | POST     | Claim a profile (`{ name }`)                                         |
+| `/api/vote`                       | POST     | Up/downvote a personality (`{ id, dir }`, 10 votes/IP/day)           |
+| `/api/voterefill`                 | POST     | Refill today's votes                                                 |
+| `/api/battle`                     | POST     | Decide the current battle (`{ winnerId }`)                           |
+| `/api/census`                     | POST     | Vote in a census question (`{ qid, option }`)                        |
+| `/api/golden`                     | POST     | Golden Upvote: +250 aura (`{ target, name }`)                        |
+| `/api/achievements`               | GET      | Earned badge grants (optionally `?player=`)                          |
+| `/api/achievements/recommend`     | POST     | AI (or rule-based) badge recommendations for the signed-in user      |
+| `/api/seasons`                    | GET      | Current season + Hall of Fame                                        |
+| `/api/halloffame`                 | GET      | Hall of Fame snapshots                                               |
+| `/api/teams`                      | GET/POST | List / create teams (`{ name, tag, emoji }`)                         |
+| `/api/teams/:id/join              | leave`   | POST                                                                 | Join / leave a team |
+| `/api/competitions`               | POST     | Create a competition (admin) (`{ name, type, days }`)                |
+| `/api/competitions/:id/enter`     | POST     | Enter your team into a live competition                              |
+| `/api/checkout`                   | POST     | Stripe Checkout session (`{ product: slot\|golden\|frame, ... }`)    |
+| `/api/webhook`                    | POST     | Stripe webhook (verified `checkout.session.completed`)               |
+| `/api/order/:id`                  | GET      | Look up a paid order by session id                                   |
+| `/api/admin/stats`                | GET      | Admin: players, votes, revenue, badges, season                       |
+| `/api/admin/achievements/grant`   | POST     | Admin: grant a badge (`{ player, badge }`)                           |
+| `/api/admin/achievements/revoke`  | POST     | Admin: revoke a badge                                                |
+| `/api/admin/seasons/rollover`     | POST     | Admin: force season rollover → Hall of Fame snapshot                 |
+| `/api/admin/competitions/:id/end` | POST     | Admin: end a competition, crown the champion                         |
 
-`/api/state` also returns `bids` — the paid board slots, sorted by amount on the client.
-
-Client IP is taken from `cf-connecting-ip` (or `x-forwarded-for`, falling back to the socket
-address), so it works behind Cloudflare and plain reverse proxies.
+Client IP comes from `cf-connecting-ip` → `x-forwarded-for` → socket, so it
+works behind NPM and/or Cloudflare.
 
 ## Scripts
 
 ```bash
-npm run dev          # Vite dev server (:5173)
-npm run build        # production build → dist/
-npm run serve        # API + static server (:4173)
-npm run lint         # eslint .
-npm run lint:fix     # eslint . --fix
-npm run format       # prettier --write .
-npm run format:check # prettier --check .
+npm run dev            # main app dev server (:5173)
+npm run dev:rankings   # rankings (:5174)
+npm run dev:community  # community (:5175)
+npm run dev:admin      # admin (:5176)
+npm run build          # build all four SPAs
+npm run serve          # platform API (:8000)
+npm run lint           # eslint .
+npm run format:check   # prettier --check .
+./scripts/setup.sh                  # one-command deployment bootstrap
+./scripts/npm-proxy-hosts.py        # sync NPM proxy hosts (--check to verify)
+./scripts/provision-authentik.py    # provision Authentik OIDC provider/app
+./scripts/build-release-artifacts.sh# bundle release payloads
 ```
 
 ## Project layout
 
 ```
-src/
-  components/   # React UI: Ticker, Nav, Hero, Leaderboard, Battles, Feed, ...
-  store.jsx     # context, provider, actions
-  reducer.js    # reducer + localStorage persistence
-  api.js        # fetch wrapper
-  helpers.js    # pure helpers (fmt, getAura, rankOf, ...)
-  data.js       # personalities, census, market, feed templates
-server.mjs      # Node HTTP server: static + /api + background simulation
-Dockerfile      # two-stage build, no node_modules in the runtime image
-docker-compose.yml
+apps/
+  app/         # main SPA (battles, census, market, cash shop, profile)
+  rankings/    # real-time leaderboards, seasons, hall of fame, prestige
+  community/   # feed, teams, competitions
+  admin/       # admin control center (role-gated)
+  shared/      # design system, API client, SSE hook, formatters
+api/           # zero-dep Node server: OIDC, SSE, achievements, seasons, Stripe, AI
+scripts/       # setup.sh, npm-proxy-hosts.py, provision-authentik.py, artifacts
+.githooks/     # commit-attribution guard (blocks AI/assistant co-author trailers)
 ```
 
-> Fan-made meme project. Not affiliated with any of the people, brands, or games mentioned.
-> All aura is fictional. 💀
+> Fan-made meme project. Not affiliated with any of the people, brands, or
+> games mentioned. All aura is fictional. 💀
