@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, apiUrl } from "../../shared/api";
 import { useLive } from "../../shared/useLive";
 import { fmt, timeLeft } from "../../shared/format";
+import { SITE } from "../../shared/urls";
 
 const RANK_COLORS = ["gold", "silver", "bronze"];
 
@@ -25,14 +26,14 @@ function Nav({ me }) {
         <i></i>LIVE RANKINGS
       </span>
       <div className="navlinks">
-        <a href="https://app.rizzaura.net" target="_blank" rel="noreferrer">
+        <a href={SITE.app} target="_blank" rel="noreferrer">
           App
         </a>
-        <a href="https://community.rizzaura.net" target="_blank" rel="noreferrer">
+        <a href={SITE.community} target="_blank" rel="noreferrer">
           Community
         </a>
         {me && me.isAdmin && (
-          <a href="https://admin.rizzaura.net" target="_blank" rel="noreferrer">
+          <a href={SITE.admin} target="_blank" rel="noreferrer">
             Admin
           </a>
         )}

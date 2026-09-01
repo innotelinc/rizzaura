@@ -11,9 +11,11 @@ COPY apps/admin/package.json apps/admin/package.json
 RUN npm ci
 COPY apps ./apps
 
-# The API origin each service talks to (baked at build time).
-ARG VITE_API_BASE=https://api.rizzaura.net
+# The API origin + base domain each service talks to (baked at build time).
+ARG VITE_API_BASE=https://api.rizz.innotel.us
 ENV VITE_API_BASE=$VITE_API_BASE
+ARG VITE_BASE_DOMAIN=rizz.innotel.us
+ENV VITE_BASE_DOMAIN=$VITE_BASE_DOMAIN
 RUN npm run build -w apps/app
 
 # ---- runtime stage: nginx serves the SPA ----

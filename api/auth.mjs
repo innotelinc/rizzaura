@@ -15,7 +15,9 @@ import crypto from "node:crypto";
 const DAY = 86400000;
 
 export const authConfig = () => ({
-  issuer: (process.env.AUTHENTIK_ISSUER || "https://auth.rizzaura.net").replace(/\/$/, ""),
+  issuer: (
+    process.env.AUTHENTIK_ISSUER || `https://auth.${process.env.BASE_DOMAIN || "rizz.innotel.us"}`
+  ).replace(/\/$/, ""),
   clientId: process.env.AUTHENTIK_CLIENT_ID || "",
   clientSecret: process.env.AUTHENTIK_CLIENT_SECRET || "",
   sessionSecret: process.env.SESSION_SECRET || "",

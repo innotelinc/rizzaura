@@ -769,6 +769,7 @@ export const ACHIEVEMENT_TIERS = {
 // `check` receives the user record (see api/state.mjs) and returns truthy when
 // the badge is earned. Evaluation runs on every state-changing action.
 export const ACHIEVEMENTS = [
+  // voting
   {
     id: "first-vote",
     name: "First Ballot",
@@ -786,13 +787,30 @@ export const ACHIEVEMENTS = [
     check: (u) => u.votesCast >= 25,
   },
   {
+    id: "vote-enthusiast",
+    name: "Vote Enthusiast",
+    emoji: "🗳️",
+    tier: "gold",
+    desc: "Cast 50 votes.",
+    check: (u) => u.votesCast >= 50,
+  },
+  {
     id: "electoral-college",
     name: "Electoral College",
-    emoji: "🗳️",
+    emoji: "🏛️",
     tier: "gold",
     desc: "Cast 100 votes.",
     check: (u) => u.votesCast >= 100,
   },
+  {
+    id: "ballot-stuffer",
+    name: "Ballot Stuffer",
+    emoji: "📦",
+    tier: "platinum",
+    desc: "Cast 200 votes. Democracy machine.",
+    check: (u) => u.votesCast >= 200,
+  },
+  // aura ladder
   {
     id: "centurion",
     name: "Century",
@@ -802,12 +820,28 @@ export const ACHIEVEMENTS = [
     check: (u) => u.aura >= 100,
   },
   {
+    id: "rising-star",
+    name: "Rising Star",
+    emoji: "🌟",
+    tier: "bronze",
+    desc: "Reach 250 aura.",
+    check: (u) => u.aura >= 250,
+  },
+  {
     id: "influencer",
     name: "Influencer",
     emoji: "📈",
     tier: "silver",
     desc: "Reach 500 aura.",
     check: (u) => u.aura >= 500,
+  },
+  {
+    id: "aura-millionaire",
+    name: "Aura Millionaire",
+    emoji: "💵",
+    tier: "silver",
+    desc: "Reach 1,000 aura.",
+    check: (u) => u.aura >= 1000,
   },
   {
     id: "aura-god",
@@ -834,6 +868,15 @@ export const ACHIEVEMENTS = [
     check: (u) => u.aura >= 10000,
   },
   {
+    id: "untouchable",
+    name: "Untouchable",
+    emoji: "☄️",
+    tier: "platinum",
+    desc: "Reach 20,000 aura. Beyond the board.",
+    check: (u) => u.aura >= 20000,
+  },
+  // battles
+  {
     id: "battle-winner",
     name: "Gladiator",
     emoji: "⚔️",
@@ -850,6 +893,15 @@ export const ACHIEVEMENTS = [
     check: (u) => u.battlesWon >= 10,
   },
   {
+    id: "battle-royale",
+    name: "Battle Royale",
+    emoji: "⚔️",
+    tier: "platinum",
+    desc: "Win 25 battles.",
+    check: (u) => u.battlesWon >= 25,
+  },
+  // census
+  {
     id: "census-voter",
     name: "Census Taker",
     emoji: "📊",
@@ -857,6 +909,23 @@ export const ACHIEVEMENTS = [
     desc: "Answer a census question.",
     check: (u) => u.censusVotes >= 1,
   },
+  {
+    id: "census-addict",
+    name: "Census Addict",
+    emoji: "📊",
+    tier: "silver",
+    desc: "Answer 10 census questions.",
+    check: (u) => u.censusVotes >= 10,
+  },
+  {
+    id: "pollster",
+    name: "Pollster",
+    emoji: "🗳️",
+    tier: "gold",
+    desc: "Answer 25 census questions.",
+    check: (u) => u.censusVotes >= 25,
+  },
+  // cash / golden
   {
     id: "golden-gifter",
     name: "Sugar Daddy",
@@ -866,6 +935,15 @@ export const ACHIEVEMENTS = [
     check: (u) => u.goldenGifts >= 1,
   },
   {
+    id: "glaze-lord",
+    name: "Glaze Lord",
+    emoji: "💸",
+    tier: "platinum",
+    desc: "Drop 3 Golden Upvotes.",
+    check: (u) => u.goldenGifts >= 3,
+  },
+  // teams
+  {
     id: "team-player",
     name: "Team Player",
     emoji: "🤝",
@@ -874,12 +952,45 @@ export const ACHIEVEMENTS = [
     check: (u) => !!u.teamId,
   },
   {
+    id: "founder",
+    name: "Founder",
+    emoji: "🚩",
+    tier: "gold",
+    desc: "Found a team.",
+    check: (u) => u.teamsFounded >= 1,
+  },
+  {
+    id: "squad-goals",
+    name: "Squad Goals",
+    emoji: "👥",
+    tier: "silver",
+    desc: "Be in a team of 5+.",
+    check: (u) => u.teamSize >= 5,
+  },
+  // competitions
+  {
     id: "competitor",
     name: "Competitor",
     emoji: "🏅",
     tier: "bronze",
     desc: "Enter a competition.",
     check: (u) => u.competitions >= 1,
+  },
+  {
+    id: "comp-veteran",
+    name: "Comp Veteran",
+    emoji: "🏅",
+    tier: "silver",
+    desc: "Enter 3 competitions.",
+    check: (u) => u.competitions >= 3,
+  },
+  {
+    id: "triple-threat",
+    name: "Triple Threat",
+    emoji: "🎯",
+    tier: "gold",
+    desc: "Enter 5 competitions.",
+    check: (u) => u.competitions >= 5,
   },
   {
     id: "champion",
@@ -890,12 +1001,37 @@ export const ACHIEVEMENTS = [
     check: (u) => u.wins >= 1,
   },
   {
+    id: "back-to-back",
+    name: "Back-to-Back",
+    emoji: "🏆",
+    tier: "gold",
+    desc: "Win 2 competitions.",
+    check: (u) => u.wins >= 2,
+  },
+  // seasons / prestige / longevity
+  {
     id: "hall-of-famer",
     name: "Hall of Famer",
     emoji: "⭐",
     tier: "platinum",
     desc: "Finish a season in the top 10.",
     check: (u) => u.prestige >= 1,
+  },
+  {
+    id: "three-peat",
+    name: "Three-Peat",
+    emoji: "⭐",
+    tier: "gold",
+    desc: "Finish top-10 in 3 seasons.",
+    check: (u) => u.prestige >= 3,
+  },
+  {
+    id: "dynasty",
+    name: "Dynasty",
+    emoji: "👑",
+    tier: "platinum",
+    desc: "Finish top-10 in 5 seasons.",
+    check: (u) => u.prestige >= 5,
   },
   {
     id: "main-character",
@@ -912,6 +1048,14 @@ export const ACHIEVEMENTS = [
     tier: "silver",
     desc: "Hold the platform's top aura for 7 days.",
     check: (u) => u.no1Days >= 7,
+  },
+  {
+    id: "platinum-grip",
+    name: "Platinum Grip",
+    emoji: "💎",
+    tier: "platinum",
+    desc: "Hold the platform's top aura for 30 days.",
+    check: (u) => u.no1Days >= 30,
   },
 ];
 

@@ -30,6 +30,8 @@ export function createTeam(user, { name, tag, emoji }) {
   };
   state.teams[id] = team;
   user.teamId = id;
+  user.teamsFounded = (user.teamsFounded || 0) + 1;
+  user.teamSize = team.members.length;
   pushFeed({
     icon: "🤝",
     text: `<b>${user.name}</b> founded <b>${team.name}</b> ${team.emoji} — new team on the scene.`,
@@ -48,6 +50,7 @@ export function joinTeam(user, teamId) {
   if (t.members.includes(user.sub)) return { error: "already a member" };
   t.members.push(user.sub);
   user.teamId = teamId;
+  user.teamSize = t.members.length;
   pushFeed({
     icon: "🤝",
     text: `<b>${user.name}</b> joined <b>${t.name}</b> ${t.emoji}`,
@@ -65,6 +68,7 @@ export function leaveTeam(user, teamId) {
   if (!t.members.includes(user.sub)) return { error: "not a member" };
   t.members = t.members.filter((s) => s !== user.sub);
   user.teamId = null;
+  user.teamSize = 0;
   if (!t.members.length) delete state.teams[teamId];
   saveState();
   broadcast({ type: "team", payload: { id: teamId } });

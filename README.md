@@ -15,21 +15,27 @@ pay.** 💰
 Six services, each its own Docker image and its own subdomain, fronted by
 Nginx Proxy Manager:
 
-| Service       | URL                      | Port | What it is                                                    |
-| ------------- | ------------------------ | ---- | ------------------------------------------------------------- |
-| **app**       | `app.rizzaura.net`       | 3010 | Main app: battles, census, market, cash shop, profile         |
-| **rankings**  | `rankings.rizzaura.net`  | 3011 | Real-time leaderboards, seasons, Hall of Fame, prestige       |
-| **community** | `community.rizzaura.net` | 3012 | Live feed, teams, competitions, census                        |
-| **admin**     | `admin.rizzaura.net`     | 3013 | Admin control center (Authentik `rizz-aura-admins` role only) |
-| **api**       | `api.rizzaura.net`       | 8000 | Zero-dependency Node API: OIDC SSO, SSE, Stripe, AI, state    |
-| **auth**      | `auth.rizzaura.net`      | 9000 | Authentik — identity provider + SSO for every service         |
+| Service       | URL                  | Port | What it is                                                    |
+| ------------- | -------------------- | ---- | ------------------------------------------------------------- |
+| **app**       | `app.<domain>`       | 3010 | Main app: battles, census, market, cash shop, profile         |
+| **rankings**  | `rankings.<domain>`  | 3011 | Real-time leaderboards, seasons, Hall of Fame, prestige       |
+| **community** | `community.<domain>` | 3012 | Live feed, teams, competitions, census                        |
+| **admin**     | `admin.<domain>`     | 3013 | Admin control center (Authentik `rizz-aura-admins` role only) |
+| **api**       | `api.<domain>`       | 8000 | Zero-dependency Node API: OIDC SSO, SSE, Stripe, AI, state    |
+| **auth**      | `auth.<domain>`      | 9000 | Authentik — identity provider + SSO for every service         |
 
 ```
-Browser ──► Nginx Proxy Manager (wildcard *.rizzaura.net TLS)
+Browser ──► Nginx Proxy Manager (wildcard *.<domain> TLS)
                  ├─► app / rankings / community / admin  (nginx SPA containers)
                  ├─► api       (Node, zero deps, SSE real-time)
                  └─► auth      (Authentik: server + worker + postgres + redis)
+                 └─► omniroute (optional profile "ai": LLM API proxy on 20128)
 ```
+
+**The domain is one setting.** `BASE_DOMAIN` in `.env` (default
+`rizz.innotel.us`; switch to `rizzaura.net` once DNS propagates) drives every
+subdomain, the Authentik public URL, CORS origins, and the frontend
+cross-links — change it in one place and re-run `./scripts/setup.sh`.
 
 - **Frontend:** four independent React 18 + Vite 5 SPAs (`apps/`), sharing a
   design system in `apps/shared/`. Each is a separate nginx container.
@@ -45,15 +51,16 @@ Browser ──► Nginx Proxy Manager (wildcard *.rizzaura.net TLS)
 ## Features
 
 - **Real-time leaderboards** — SSE-driven global + paid board, live updates.
-- **Achievements & badges** — 18 badges across bronze/silver/gold/platinum
-  tiers, auto-evaluated as you play.
+- **Achievements & badges** — 35 badges across bronze/silver/gold/platinum
+  tiers (voting, aura milestones, battles, census, teams, competitions,
+  prestige, longevity), auto-evaluated as you play.
 - **Seasonal rankings** — 28-day seasons; the top 20 personalities and top 10
   players are immortalized in the Hall of Fame each rollover.
 - **Hall of Fame & prestige** — season snapshots forever; finishing top 10
   earns prestige and the Hall of Famer badge.
 - **AI-powered achievement recommendations** — an OpenAI-compatible endpoint
-  (OpenAI, Groq, Together, or self-hosted Ollama) suggests which badges to
-  chase, with a rule-based fallback when no key is configured.
+  (OmniRoute by default, or OpenAI/Groq/Together/Ollama) suggests which
+  badges to chase, with a rule-based fallback when no key is configured.
 - **Teams & competitions** — form teams, join live competitions, and win the
   platform championship.
 - **Cash Shop** — Board Slots, Cash Golden Upvotes, Permanent Flex Frames via
@@ -87,12 +94,14 @@ git clone https://github.com/innotelinc/rizzaura-platform.git && cd rizzaura-pla
 1. Generates `.env` from `.env.example` with fresh secrets
 2. Builds & boots the stack — `docker compose up -d --build`
 3. Provisions Authentik (`scripts/provision-authentik.py`): creates the
-   **Rizz Aura SSO** OIDC provider (redirect → `api.rizzaura.net/api/auth/callback`),
+   **Rizz Aura SSO** OIDC provider (redirect → `api.<domain>/api/auth/callback`),
    the **Rizz Aura** application, and the `rizz-aura-admins` group, then writes
    `AUTHENTIK_CLIENT_ID/SECRET` into `.env` and restarts the API
 4. Provisions Nginx Proxy Manager (`scripts/npm-proxy-hosts.py`) — the six
-   proxy hosts + **one wildcard `*.rizzaura.net` certificate** via DNS-01
-5. Smoke-tests `/api/state`, `/api/me`, `/api/seasons`
+   proxy hosts + **one wildcard `*.<domain>` certificate** via DNS-01
+5. Mints the OmniRoute API key and wires it into `AI_API_KEY` (when the AI
+   profile is enabled)
+6. Smoke-tests `/api/state`, `/api/me`, `/api/seasons`
 
 ### Wildcard SSL with TSIG
 
@@ -108,7 +117,7 @@ NPM_DNS_PROVIDER_CREDENTIALS=<credential id from NPM>
 ```
 
 `npm-proxy-hosts.py` then requests one Let's Encrypt cert for
-`*.rizzaura.net + rizzaura.net` and attaches it to every host. Re-run
+`*.<BASE_DOMAIN> + <BASE_DOMAIN>` and attaches it to every host. Re-run
 `./scripts/setup.sh` (or the script directly) to sync.
 
 ### Manual compose
@@ -127,15 +136,44 @@ REST API (`NPM_API_URL`, default `http://127.0.0.1:81`).
 
 ## Authentik (SSO)
 
-- Bootstrap admin: `admin@rizzaura.net` / `AUTHENTIK_BOOTSTRAP_PASSWORD` (in `.env`).
+- Bootstrap admin: `admin@rizz.innotel.us` / `AUTHENTIK_BOOTSTRAP_PASSWORD` (in `.env`).
 - The API is the single OIDC client; every frontend redirects to
-  `api.rizzaura.net/api/auth/login?next=<origin>`.
+  `api.<domain>/api/auth/login?next=<origin>`.
 - Add users to the **rizz-aura-admins** group to grant admin panel access.
 - Admin groups come from Authentik's groups scope; sessions are HttpOnly,
   HMAC-signed cookies (`SESSION_SECRET`).
 
 Without `AUTHENTIK_CLIENT_ID/SECRET` everything still works anonymously —
 SSO is additive.
+
+## AI recommendations (OmniRoute)
+
+The achievement recommender calls any OpenAI-compatible `/chat/completions`
+endpoint. The stack ships with **OmniRoute**, a self-hosted LLM API proxy, as
+an opt-in compose profile:
+
+```bash
+# enable the AI gateway (one time)
+docker compose --profile ai up -d
+# or let setup.sh do it: set OMNIROUTE_INITIAL_PASSWORD in .env and re-run
+./scripts/setup.sh
+```
+
+`setup.sh` boots the profile, mints an OmniRoute API key through its admin
+API, and writes it to `AI_API_KEY` automatically. OmniRoute is exposed at
+`http://omniroute:20128/v1` (`AI_BASE_URL`), and `AI_MODEL` selects the model.
+
+To point at a different provider instead (OpenAI, Groq, Together, Ollama,
+...), override in `.env`:
+
+```
+AI_BASE_URL=https://api.openai.com/v1
+AI_API_KEY=sk-...
+AI_MODEL=gpt-4o-mini
+```
+
+No key configured → recommendations fall back to deterministic rules, so the
+feature always works.
 
 ## CI / CD
 
@@ -148,14 +186,14 @@ SSO is additive.
   checksums.
 
 ```bash
-git tag -a v2.0.0 -m "Rizz Aura v2.0.0"
-git push origin v2.0.0     # images publish + release artifacts attach
+git tag -a v2.1.0 -m "Rizz Aura v2.1.0"
+git push origin v2.1.0     # images publish + release artifacts attach
 ```
 
 ## API
 
 All endpoints are JSON under `/api`. The dev servers proxy to `:8000`; in
-production the frontends talk to `api.rizzaura.net` directly (CORS with
+production the frontends talk to `api.<domain>` directly (CORS with
 credentials).
 
 | Endpoint                          | Method   | Description                                                          |

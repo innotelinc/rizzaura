@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, apiUrl } from "../../shared/api";
 import { fmt } from "../../shared/format";
+import { SITE } from "../../shared/urls";
 
 const BADGES = [
   {
@@ -12,19 +13,55 @@ const BADGES = [
   },
   { id: "voice-heard", name: "Voice Heard", emoji: "📢", tier: "silver", desc: "Cast 25 votes." },
   {
+    id: "vote-enthusiast",
+    name: "Vote Enthusiast",
+    emoji: "🗳️",
+    tier: "gold",
+    desc: "Cast 50 votes.",
+  },
+  {
     id: "electoral-college",
     name: "Electoral College",
-    emoji: "🗳️",
+    emoji: "🏛️",
     tier: "gold",
     desc: "Cast 100 votes.",
   },
+  {
+    id: "ballot-stuffer",
+    name: "Ballot Stuffer",
+    emoji: "📦",
+    tier: "platinum",
+    desc: "Cast 200 votes.",
+  },
   { id: "centurion", name: "Century", emoji: "💯", tier: "bronze", desc: "Reach 100 aura." },
+  { id: "rising-star", name: "Rising Star", emoji: "🌟", tier: "bronze", desc: "Reach 250 aura." },
   { id: "influencer", name: "Influencer", emoji: "📈", tier: "silver", desc: "Reach 500 aura." },
+  {
+    id: "aura-millionaire",
+    name: "Aura Millionaire",
+    emoji: "💵",
+    tier: "silver",
+    desc: "Reach 1,000 aura.",
+  },
   { id: "aura-god", name: "Aura God", emoji: "🕶️", tier: "gold", desc: "Reach 2,000 aura." },
   { id: "mogul", name: "Mogul", emoji: "👑", tier: "gold", desc: "Reach 5,000 aura." },
   { id: "legend", name: "Legend", emoji: "🏛️", tier: "platinum", desc: "Reach 10,000 aura." },
+  {
+    id: "untouchable",
+    name: "Untouchable",
+    emoji: "☄️",
+    tier: "platinum",
+    desc: "Reach 20,000 aura.",
+  },
   { id: "battle-winner", name: "Gladiator", emoji: "⚔️", tier: "silver", desc: "Win a battle." },
   { id: "battle-champ", name: "Undisputed", emoji: "🥊", tier: "gold", desc: "Win 10 battles." },
+  {
+    id: "battle-royale",
+    name: "Battle Royale",
+    emoji: "⚔️",
+    tier: "platinum",
+    desc: "Win 25 battles.",
+  },
   {
     id: "census-voter",
     name: "Census Taker",
@@ -33,13 +70,42 @@ const BADGES = [
     desc: "Answer a census question.",
   },
   {
+    id: "census-addict",
+    name: "Census Addict",
+    emoji: "📊",
+    tier: "silver",
+    desc: "Answer 10 census questions.",
+  },
+  {
+    id: "pollster",
+    name: "Pollster",
+    emoji: "🗳️",
+    tier: "gold",
+    desc: "Answer 25 census questions.",
+  },
+  {
     id: "golden-gifter",
     name: "Sugar Daddy",
     emoji: "💸",
     tier: "gold",
     desc: "Drop a Golden Upvote.",
   },
+  {
+    id: "glaze-lord",
+    name: "Glaze Lord",
+    emoji: "💸",
+    tier: "platinum",
+    desc: "Drop 3 Golden Upvotes.",
+  },
   { id: "team-player", name: "Team Player", emoji: "🤝", tier: "silver", desc: "Join a team." },
+  { id: "founder", name: "Founder", emoji: "🚩", tier: "gold", desc: "Found a team." },
+  {
+    id: "squad-goals",
+    name: "Squad Goals",
+    emoji: "👥",
+    tier: "silver",
+    desc: "Be in a team of 5+.",
+  },
   {
     id: "competitor",
     name: "Competitor",
@@ -47,13 +113,48 @@ const BADGES = [
     tier: "bronze",
     desc: "Enter a competition.",
   },
+  {
+    id: "comp-veteran",
+    name: "Comp Veteran",
+    emoji: "🏅",
+    tier: "silver",
+    desc: "Enter 3 competitions.",
+  },
+  {
+    id: "triple-threat",
+    name: "Triple Threat",
+    emoji: "🎯",
+    tier: "gold",
+    desc: "Enter 5 competitions.",
+  },
   { id: "champion", name: "Champion", emoji: "🏆", tier: "platinum", desc: "Win a competition." },
+  {
+    id: "back-to-back",
+    name: "Back-to-Back",
+    emoji: "🏆",
+    tier: "gold",
+    desc: "Win 2 competitions.",
+  },
   {
     id: "hall-of-famer",
     name: "Hall of Famer",
     emoji: "⭐",
     tier: "platinum",
     desc: "Finish a season top-10.",
+  },
+  {
+    id: "three-peat",
+    name: "Three-Peat",
+    emoji: "⭐",
+    tier: "gold",
+    desc: "Finish top-10 in 3 seasons.",
+  },
+  {
+    id: "dynasty",
+    name: "Dynasty",
+    emoji: "👑",
+    tier: "platinum",
+    desc: "Finish top-10 in 5 seasons.",
   },
   {
     id: "main-character",
@@ -68,6 +169,13 @@ const BADGES = [
     emoji: "💎",
     tier: "silver",
     desc: "Hold #1 for 7 days.",
+  },
+  {
+    id: "platinum-grip",
+    name: "Platinum Grip",
+    emoji: "💎",
+    tier: "platinum",
+    desc: "Hold #1 for 30 days.",
   },
 ];
 
@@ -171,13 +279,13 @@ export default function App() {
           <i></i>CONTROL CENTER
         </span>
         <div className="navlinks">
-          <a href="https://app.rizzaura.net" target="_blank" rel="noreferrer">
+          <a href={SITE.app} target="_blank" rel="noreferrer">
             App
           </a>
-          <a href="https://rankings.rizzaura.net" target="_blank" rel="noreferrer">
+          <a href={SITE.rankings} target="_blank" rel="noreferrer">
             Rankings
           </a>
-          <a href="https://community.rizzaura.net" target="_blank" rel="noreferrer">
+          <a href={SITE.community} target="_blank" rel="noreferrer">
             Community
           </a>
           <span className="user-chip admin">
