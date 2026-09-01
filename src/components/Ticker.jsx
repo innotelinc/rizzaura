@@ -6,7 +6,7 @@ export default function Ticker() {
   // regenerate as the feed evolves (at least 10 entries for a full marquee)
   const items = useMemo(() => {
     const count = Math.max(10, state.feed.length);
-    return Array.from({ length: count }, () => makeEvent().text.replace(/<[^>]+>/g, ""));
+    return Array.from({ length: count }, () => makeEvent().replace(/<[^>]+>/g, ""));
   }, [state.feed.length]);
   return (
     <div className="ticker" aria-hidden="true">
