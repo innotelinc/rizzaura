@@ -60,6 +60,7 @@ function ProfileCard({ p, state, actions }) {
         <span>
           🗳️ <b>{votesLeftToday(state)}</b> votes left
         </span>
+        {flexed && <span className="paid-flex-chip">✨ PAID FLEX</span>}
       </div>
       <div className="prof-actions">
         <button className="mini-btn" onClick={copyFlex}>

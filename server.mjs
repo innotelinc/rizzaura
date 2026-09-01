@@ -1,8 +1,9 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { PERSONALITIES, CENSUS, BATTLE_CATS, FEED_TEMPLATES } from "./src/data.js";
+import { PERSONALITIES, CENSUS, BATTLE_CATS, FEED_TEMPLATES, CASH_SHOP } from "./src/data.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(__dirname, "dist");
@@ -10,6 +11,91 @@ const DATA_DIR = path.join(__dirname, "data");
 const STATE_FILE = path.join(DATA_DIR, "state.json");
 const PORT = process.env.PORT || 4173;
 const VOTE_LIMIT = 10; // votes per IP per day
+
+/* ------------------------- tiny .env loader (zero deps) ------------------------- */
+function loadEnv() {
+  try {
+    const raw = fs.readFileSync(path.join(__dirname, ".env"), "utf8");
+    for (const line of raw.split("\n")) {
+      const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+      if (m && !(m[1] in process.env)) {
+        let v = m[2].trim();
+        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))
+          v = v.slice(1, -1);
+        process.env[m[1]] = v;
+      }
+    }
+  } catch {
+    /* no .env file — env vars come from the shell / docker */
+  }
+}
+loadEnv();
+
+/* ------------------------- Stripe (Cash Shop) ------------------------- */
+const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY || "";
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
+const APP_URL = (process.env.APP_URL || `http://localhost:${PORT}`).replace(/\/$/, "");
+
+async function stripePost(pathname, params) {
+  const r = await fetch("https://api.stripe.com/v1" + pathname, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + STRIPE_SECRET,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(params).toString(),
+  });
+  const j = await r.json();
+  if (!r.ok) {
+    const err = new Error(j.error?.message || "stripe error " + r.status);
+    err.status = r.status;
+    throw err;
+  }
+  return j;
+}
+
+// Apply a confirmed order (called from the webhook). Orders are keyed by
+// Stripe Checkout session id so /api/order/:id can report back to the client.
+function applyOrder(o) {
+  state.orders[o.sessionId] = o;
+  // keep the orders log bounded — it only exists for /api/order/:id lookups
+  const keys = Object.keys(state.orders);
+  if (keys.length > 500) delete state.orders[keys[0]];
+  if (o.product === "slot") {
+    const name = String(o.name || "Anonymous");
+    const entry = {
+      id: o.sessionId,
+      name,
+      handle: o.handle || "@" + name.toLowerCase().replace(/[^a-z0-9]+/g, ""),
+      emoji: o.emoji || "😎",
+      cents: o.cents || 300,
+      verified: true,
+      ts: Date.now(),
+    };
+    state.bids.push(entry);
+    pushFeed({
+      icon: "💰",
+      text: `<b>${escapeHtml(name)}</b> just bought a spot on the Clout Board for <b>$${(entry.cents / 100).toFixed(2)}</b> 👑 Rank is what you pay.`,
+      ts: Date.now(),
+    });
+  } else if (o.product === "golden") {
+    const p = getPerson(o.target);
+    if (p) {
+      state.pAura[o.target] = getAura(o.target) + 500;
+      pushFeed({
+        icon: "💸",
+        text: `Someone dropped <b>cash</b> on a Golden Upvote for <b>${p.name}</b> (+500 Aura) 💸 Pure glaze.`,
+        ts: Date.now(),
+      });
+    }
+  } else if (o.product === "frame") {
+    pushFeed({
+      icon: "✨",
+      text: `Someone copped the <b>Permanent Flex Frame</b> 💸 Now they glow forever.`,
+      ts: Date.now(),
+    });
+  }
+}
 
 /* ------------------------- helpers ------------------------- */
 const rnd = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -59,6 +145,8 @@ let state = {
   votesByIp: {},
   censusByIp: {},
   players: 12847,
+  bids: [], // paid Clout Board slots: { id, name, handle, emoji, cents, verified, ts }
+  orders: {}, // paid orders keyed by Stripe session id
 };
 
 function seedCensus() {
@@ -82,6 +170,31 @@ function loadState() {
     for (let i = 0; i < 8; i++) pushFeed(makeEvent());
   }
   if (!state.battle || !state.battle.a) newBattle();
+  if (!Array.isArray(state.bids)) state.bids = [];
+  if (!state.orders || typeof state.orders !== "object") state.orders = {};
+  if (!state.bids.length) seedBids();
+}
+
+// A few demo slots so the board doesn't look empty before the first real bid.
+// Delete them from data/state.json anytime — they're just hype.
+function seedBids() {
+  const now = Date.now();
+  const demos = [
+    ["Lil' Bro Inc.", "@lilbro", "🤑", 42000, now - 86400000 * 2],
+    ["The Group Chat", "@groupchat", "💬", 25000, now - 86400000],
+    ["Glizzy Gang", "@glizzy", "🌭", 10000, now - 3600000 * 5],
+    ["Ur Mom's Friend", "@umf", "👩‍👧", 5000, now - 3600000],
+    ["Speed's Manager", "@speedmgmt", "🧢", 3000, now - 1800000],
+  ];
+  state.bids = demos.map(([name, handle, emoji, cents, ts]) => ({
+    id: "demo-" + name.toLowerCase().replace(/[^a-z0-9]+/g, ""),
+    name,
+    handle,
+    emoji,
+    cents,
+    verified: true,
+    ts,
+  }));
 }
 function saveState() {
   try {
@@ -181,6 +294,23 @@ function json(res, code, data) {
   res.end(JSON.stringify(data));
 }
 
+// Raw body (no JSON parse) — Stripe webhook signatures are computed over the
+// exact bytes of the payload, so we must verify before parsing.
+async function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 5e6) {
+        reject(new Error("payload too large"));
+        req.destroy();
+      }
+    });
+    req.on("end", () => resolve(body));
+    req.on("error", reject);
+  });
+}
+
 function publicState() {
   return {
     pAura: state.pAura,
@@ -188,6 +318,7 @@ function publicState() {
     feed: state.feed,
     battle: state.battle,
     players: state.players,
+    bids: state.bids,
   };
 }
 
@@ -208,6 +339,128 @@ const server = http.createServer(async (req, res) => {
   try {
     if (pathname === "/api/state" && req.method === "GET") {
       json(res, 200, publicState());
+      return;
+    }
+
+    if (pathname === "/api/checkout" && req.method === "POST") {
+      if (!STRIPE_SECRET) {
+        json(res, 200, { ok: false, error: "not_configured" });
+        return;
+      }
+      const { product, name, handle, emoji, target, amount } = await readBody(req);
+      let unitAmount = 0;
+      let productName = "Rizz Aura Flex";
+      let metadata = { product: String(product || ""), ip };
+      if (product === "slot") {
+        const n = String(name || "")
+          .trim()
+          .slice(0, 20);
+        if (!n) {
+          json(res, 400, { ok: false, error: "name required" });
+          return;
+        }
+        const cents = Math.max(CASH_SHOP.slot.minCents, Math.round(Number(amount) || 0));
+        if (!Number.isFinite(cents)) {
+          json(res, 400, { ok: false, error: "bad amount" });
+          return;
+        }
+        unitAmount = cents;
+        productName = "Aura Board Slot — " + n;
+        metadata = {
+          product: "slot",
+          name: n,
+          handle: String(handle || "")
+            .trim()
+            .slice(0, 20),
+          emoji: String(emoji || "😎"),
+          ip,
+        };
+      } else if (product === "golden") {
+        const p = getPerson(target);
+        if (!p) {
+          json(res, 400, { ok: false, error: "bad target" });
+          return;
+        }
+        unitAmount = CASH_SHOP.golden.price;
+        productName = "Cash Golden Upvote → " + p.name;
+        metadata = { product: "golden", target: p.id, ip };
+      } else if (product === "frame") {
+        unitAmount = CASH_SHOP.frame.price;
+        productName = "Permanent Flex Frame";
+        metadata = { product: "frame", ip };
+      } else {
+        json(res, 400, { ok: false, error: "bad payload" });
+        return;
+      }
+      const session = await stripePost("/checkout/sessions", {
+        mode: "payment",
+        success_url: APP_URL + "/?paid=1&session={CHECKOUT_SESSION_ID}",
+        cancel_url: APP_URL + "/?paid=0",
+        "line_items[0][quantity]": "1",
+        "line_items[0][price_data][currency]": "usd",
+        "line_items[0][price_data][unit_amount]": String(unitAmount),
+        "line_items[0][price_data][product_data][name]": productName,
+        "metadata[product]": metadata.product,
+        "metadata[name]": metadata.name || "",
+        "metadata[handle]": metadata.handle || "",
+        "metadata[emoji]": metadata.emoji || "",
+        "metadata[target]": metadata.target || "",
+      });
+      json(res, 200, { ok: true, url: session.url, id: session.id });
+      return;
+    }
+
+    if (pathname === "/api/webhook" && req.method === "POST") {
+      const raw = await readRawBody(req);
+      if (!STRIPE_WEBHOOK_SECRET) {
+        json(res, 400, { ok: false, error: "not_configured" });
+        return;
+      }
+      const sig = req.headers["stripe-signature"] || "";
+      const tMatch = sig.match(/t=(\d+)/);
+      const vMatch = sig.match(/v1=([0-9a-f]+)/);
+      if (!tMatch || !vMatch) {
+        json(res, 400, { ok: false, error: "bad signature" });
+        return;
+      }
+      // replay protection: reject signatures older than 5 minutes
+      if (Math.abs(Date.now() / 1000 - Number(tMatch[1])) > 300) {
+        json(res, 400, { ok: false, error: "expired signature" });
+        return;
+      }
+      const expected = crypto
+        .createHmac("sha256", STRIPE_WEBHOOK_SECRET)
+        .update(tMatch[1] + "." + raw)
+        .digest("hex");
+      const a = Buffer.from(expected);
+      const b = Buffer.from(vMatch[1]);
+      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+        json(res, 400, { ok: false, error: "bad signature" });
+        return;
+      }
+      const evt = JSON.parse(raw);
+      if (evt.type === "checkout.session.completed") {
+        const s = evt.data.object;
+        const m = s.metadata || {};
+        applyOrder({
+          sessionId: s.id,
+          product: m.product,
+          name: m.name,
+          handle: m.handle,
+          emoji: m.emoji,
+          target: m.target,
+          cents: s.amount_total || 0,
+        });
+        saveState();
+      }
+      json(res, 200, { ok: true });
+      return;
+    }
+
+    if (pathname.startsWith("/api/order/") && req.method === "GET") {
+      const sessionId = decodeURIComponent(pathname.slice("/api/order/".length));
+      const o = state.orders[sessionId];
+      json(res, 200, o ? { ok: true, order: o } : { ok: false, pending: true });
       return;
     }
 

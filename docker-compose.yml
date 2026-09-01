@@ -5,8 +5,13 @@ services:
     container_name: rizz-aura
     ports:
       - "4173:4173"
+    environment:
+      # Cash Shop (Stripe) — set these in a .env next to this file, or pass -e
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      APP_URL: ${APP_URL:-http://localhost:4173}
     volumes:
-      # named volume keeps data/state.json (votes, aura, battles) across restarts
+      # named volume keeps data/state.json (votes, aura, bids, battles) across restarts
       - rizz-aura-data:/app/data
     restart: unless-stopped
 

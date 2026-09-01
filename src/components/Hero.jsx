@@ -11,6 +11,8 @@ export default function Hero() {
   );
   const auraStr =
     totalAura >= 1e6 ? (totalAura / 1e6).toFixed(1) + "M" : (totalAura / 1e3).toFixed(1) + "K";
+  const paidTotal = (state.bids || []).reduce((s, b) => s + (b.cents || 0), 0);
+  const paidStr = "$" + (paidTotal / 100).toLocaleString("en-US", { maximumFractionDigits: 0 });
 
   const handleClaim = () => {
     if (state.profile) {
@@ -29,7 +31,7 @@ export default function Hero() {
       </h1>
       <p className="sub">
         Rank creators, brands, streamers, athletes, and your friends. Earn clout, collect aura, and
-        prove who's really the main character.
+        prove who's really the main character — or skip the grind and <b>buy the board</b>. 💰
       </p>
       <div className="hero-stats">
         <span>
@@ -39,7 +41,7 @@ export default function Hero() {
           <b>{auraStr}</b> Aura Earned
         </span>
         <span>
-          <b>8,491</b> Mogged
+          <b>{paidStr}</b> Paid Flexes
         </span>
         <span>
           <b>99%</b> Rizz Guaranteed
@@ -48,6 +50,9 @@ export default function Hero() {
       <div className="cta-row">
         <button className="btn" onClick={handleClaim}>
           Claim Your Aura
+        </button>
+        <button className="btn cash" onClick={actions.openBid}>
+          💰 Buy the Board
         </button>
         <a className="btn ghost" href="#leaderboard">
           View Leaderboard

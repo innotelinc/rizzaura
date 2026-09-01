@@ -13,32 +13,83 @@ function StatBar({ label, v }) {
   );
 }
 
+const money = (cents) => "$" + (cents / 100).toLocaleString("en-US", { maximumFractionDigits: 2 });
+
 export default function Leaderboard() {
   const { state, actions } = useStore();
   const votesLeft = votesLeftToday(state);
-  // only pAura drives the sort — recomputing on every state change is wasteful
+  const bids = useMemo(
+    () => [...(state.bids || [])].sort((a, b) => b.cents - a.cents || a.ts - b.ts),
+    [state.bids],
+  );
   const sorted = useMemo(
     () => [...PERSONALITIES].sort((a, b) => getAura(state, b.id) - getAura(state, a.id)),
     [state.pAura], // eslint-disable-line react-hooks/exhaustive-deps
   );
+  const topBid = bids[0];
   return (
     <section id="leaderboard">
-      <div className="sec-head">
+      <div className="sec-head lb-head">
         <div className="tag">Live Rankings</div>
         <h2>
           The Aura <span className="grad-text">Leaderboard</span>
         </h2>
         <p>
-          Upvote to pump. Downvote to dump. Every vote moves the board. Golden Upvotes move it a
-          lot.
+          Upvote to pump. Dump to dump. Golden Upvotes move it a lot. Or skip the grind:{" "}
+          <b style={{ color: "#fff" }}>
+            buy a slot and stand above everyone — rank is what you pay.
+          </b>{" "}
+          💸
         </p>
+        <button className="mini-btn cash-cta" onClick={actions.openBid}>
+          💰 Buy the Board
+        </button>
+        {topBid && (
+          <div className="top-bid-line">
+            Top bid right now: <b>{money(topBid.cents)}</b> by {topBid.name} {topBid.emoji} —{" "}
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                actions.openBid();
+              }}
+            >
+              mog them 👑
+            </a>
+          </div>
+        )}
       </div>
       <div className="card">
+        {bids.map((b, i) => (
+          <div className={`rank-row clout-row ${i === 0 ? "top-bid" : ""}`} key={b.id}>
+            <span className={`rank-no ${i === 0 ? "gold" : ""}`}>#{i + 1}</span>
+            <div className="rank-ava clout-ava">{b.emoji}</div>
+            <div className="rank-info">
+              <div className="nm">
+                {b.name} <span className="cat paid-chip">💰 PAID</span>
+                <span className="verified-chip">✓ VERIFIED</span>
+              </div>
+              <div className="handle">
+                {b.handle} · flexed {money(b.cents)}
+              </div>
+            </div>
+            <div className="rank-aura">
+              <small>FLEX</small>
+              <b className="cash-text">{money(b.cents)}</b>
+            </div>
+          </div>
+        ))}
+        {bids.length > 0 && (
+          <div className="board-divider">
+            <span>⬇ THE GRIND BOARD · RANKED BY AURA VOTES ⬇</span>
+          </div>
+        )}
         {sorted.map((p, i) => {
-          const cls = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
+          const rank = i + bids.length + 1;
+          const cls = rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "bronze" : "";
           return (
             <div className="rank-row" key={p.id}>
-              <span className={`rank-no ${cls}`}>#{i + 1}</span>
+              <span className={`rank-no ${cls}`}>#{rank}</span>
               <div className="rank-ava" style={{ borderColor: CAT_COLORS[p.cat] + "55" }}>
                 {p.emoji}
               </div>

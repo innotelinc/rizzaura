@@ -26,6 +26,14 @@ export default function How() {
             post it everywhere.
           </p>
         </div>
+        <div className="how-card card">
+          <span className="n">04</span>
+          <h3>Buy the Bag 💰</h3>
+          <p>
+            Out of patience? Buy a slot on the board — rank is what you pay. Outbid everyone, become
+            #1, and mog the entire internet with your wallet.
+          </p>
+        </div>
       </div>
     </section>
   );
