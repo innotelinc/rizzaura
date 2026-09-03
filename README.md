@@ -10,9 +10,9 @@ slots rank at the top, outbid.lol style — **rank is what you pay.** 💰
 
 "Got Aura? Prove It. Got Cash? Prove It Faster."
 
-[![Build & publish](https://innotelinc.github.io/rizzaura/actions/workflows/build-and-publish.yml/badge.svg)](https://innotelinc.github.io/rizzaura/actions/workflows/build-and-publish.yml)
-[![Release](https://innotelinc.github.io/rizzaura/actions/workflows/release.yml/badge.svg)](https://innotelinc.github.io/rizzaura/actions/workflows/release.yml)
-[![Latest release](https://img.shields.io/github/v/release/innotelinc/rizzaura-platform?color=f97316)](https://innotelinc.github.io/rizzaura/releases)
+[![Build & publish](https://github.com/innotelinc/rizzaura/actions/workflows/build-and-publish.yml/badge.svg)](https://github.com/innotelinc/rizzaura/actions/workflows/build-and-publish.yml)
+[![Release](https://github.com/innotelinc/rizzaura/actions/workflows/release.yml/badge.svg)](https://github.com/innotelinc/rizzaura/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/innotelinc/rizzaura?color=f97316)](https://innotelinc.github.io/rizzaura/releases)
 
 </div>
 
