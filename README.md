@@ -10,9 +10,9 @@ slots rank at the top, outbid.lol style — **rank is what you pay.** 💰
 
 "Got Aura? Prove It. Got Cash? Prove It Faster."
 
-[![Build & publish](https://github.com/innotelinc/rizzaura-platform/actions/workflows/build-and-publish.yml/badge.svg)](https://github.com/innotelinc/rizzaura-platform/actions/workflows/build-and-publish.yml)
-[![Release](https://github.com/innotelinc/rizzaura-platform/actions/workflows/release.yml/badge.svg)](https://github.com/innotelinc/rizzaura-platform/actions/workflows/release.yml)
-[![Latest release](https://img.shields.io/github/v/release/innotelinc/rizzaura-platform?color=f97316)](https://github.com/innotelinc/rizzaura-platform/releases)
+[![Build & publish](https://innotelinc.github.io/rizzaura/actions/workflows/build-and-publish.yml/badge.svg)](https://innotelinc.github.io/rizzaura/actions/workflows/build-and-publish.yml)
+[![Release](https://innotelinc.github.io/rizzaura/actions/workflows/release.yml/badge.svg)](https://innotelinc.github.io/rizzaura/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/innotelinc/rizzaura-platform?color=f97316)](https://innotelinc.github.io/rizzaura/releases)
 
 </div>
 
@@ -20,7 +20,7 @@ slots rank at the top, outbid.lol style — **rank is what you pay.** 💰
 > brands, streamers, athletes, and friends: real-time leaderboards, achievements and
 > badges, seasonal championships, a Hall of Fame, AI-powered achievement
 > recommendations, and paid board slots — with Authentik SSO and a zero-dependency Node
-> API. **Landing page:** [github.com/innotelinc/rizzaura-platform](https://github.com/innotelinc/rizzaura-platform)
+> API. **Landing page:** [innotelinc.github.io/rizzaura](https://innotelinc.github.io/rizzaura)
 
 ---
 
@@ -99,7 +99,7 @@ SSO needs Authentik + a provisioned OIDC client — see below.
 ## Deploy (Docker + Authentik + NPM)
 
 ```bash
-git clone https://github.com/innotelinc/rizzaura-platform.git && cd rizzaura-platform
+git clone https://innotelinc.github.io/rizzaura.git && cd rizzaura-platform
 ./scripts/setup.sh
 ```
 
