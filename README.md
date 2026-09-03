@@ -1,14 +1,46 @@
-# Rizz Aura — Global Leaderboard Platform 🔥
+<div align="center">
 
-The self-hosted aura leaderboard platform. Rank creators, brands, streamers,
-athletes, and your friends — earn clout, collect aura, form teams, win
-competitions, and prove who's really the main character. Real-time
-leaderboards, achievements and badges, seasonal championships, a Hall of Fame,
-and AI-powered achievement recommendations. Or skip the grind and **buy the
-board**: paid slots rank at the top, outbid.lol style — **rank is what you
-pay.** 💰
+# 🔥 Rizz Aura — Global Leaderboard Platform
+
+**The self-hosted aura leaderboard. Rank creators, brands, streamers, athletes, and your friends — earn clout, collect aura, form teams, win competitions, and prove who's really the main character.**
+
+Real-time leaderboards, achievements and badges, seasonal championships, a Hall of Fame,
+and AI-powered achievement recommendations. Or skip the grind and **buy the board**: paid
+slots rank at the top, outbid.lol style — **rank is what you pay.** 💰
 
 "Got Aura? Prove It. Got Cash? Prove It Faster."
+
+[![Build & publish](https://github.com/innotelinc/rizzaura-platform/actions/workflows/build-and-publish.yml/badge.svg)](https://github.com/innotelinc/rizzaura-platform/actions/workflows/build-and-publish.yml)
+[![Release](https://github.com/innotelinc/rizzaura-platform/actions/workflows/release.yml/badge.svg)](https://github.com/innotelinc/rizzaura-platform/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/innotelinc/rizzaura-platform?color=f97316)](https://github.com/innotelinc/rizzaura-platform/releases)
+
+</div>
+
+> **About Rizz Aura** — the self-hosted aura leaderboard platform for ranking creators,
+> brands, streamers, athletes, and friends: real-time leaderboards, achievements and
+> badges, seasonal championships, a Hall of Fame, AI-powered achievement
+> recommendations, and paid board slots — with Authentik SSO and a zero-dependency Node
+> API. **Landing page:** [github.com/innotelinc/rizzaura-platform](https://github.com/innotelinc/rizzaura-platform)
+
+---
+
+## ✨ Features
+
+- **Real-time leaderboards** — SSE-driven global + paid board, live updates.
+- **Achievements & badges** — 35 badges across bronze/silver/gold/platinum
+  tiers (voting, aura milestones, battles, census, teams, competitions,
+  prestige, longevity), auto-evaluated as you play.
+- **Seasonal rankings** — 28-day seasons; the top 20 personalities and top 10
+  players are immortalized in the Hall of Fame each rollover.
+- **Hall of Fame & prestige** — season snapshots forever; finishing top 10
+  earns prestige and the Hall of Famer badge.
+- **AI-powered achievement recommendations** — an OpenAI-compatible endpoint
+  (OmniRoute by default, or OpenAI/Groq/Together/Ollama) suggests which
+  badges to chase, with a rule-based fallback when no key is configured.
+- **Teams & competitions** — form teams, join live competitions, and win the
+  platform championship.
+- **Cash Shop** — Board Slots, Cash Golden Upvotes, Permanent Flex Frames via
+  Stripe Checkout.
 
 ## Architecture
 
@@ -48,25 +80,7 @@ cross-links — change it in one place and re-run `./scripts/setup.sh`.
   cookies, role-gated admin).
 - **Payments:** Stripe Checkout via REST over `fetch`.
 
-## Features
-
-- **Real-time leaderboards** — SSE-driven global + paid board, live updates.
-- **Achievements & badges** — 35 badges across bronze/silver/gold/platinum
-  tiers (voting, aura milestones, battles, census, teams, competitions,
-  prestige, longevity), auto-evaluated as you play.
-- **Seasonal rankings** — 28-day seasons; the top 20 personalities and top 10
-  players are immortalized in the Hall of Fame each rollover.
-- **Hall of Fame & prestige** — season snapshots forever; finishing top 10
-  earns prestige and the Hall of Famer badge.
-- **AI-powered achievement recommendations** — an OpenAI-compatible endpoint
-  (OmniRoute by default, or OpenAI/Groq/Together/Ollama) suggests which
-  badges to chase, with a rule-based fallback when no key is configured.
-- **Teams & competitions** — form teams, join live competitions, and win the
-  platform championship.
-- **Cash Shop** — Board Slots, Cash Golden Upvotes, Permanent Flex Frames via
-  Stripe Checkout.
-
-## Quick start (development)
+## 🚀 Quick start (development)
 
 You need the API on `:8000` and one or more Vite dev servers:
 
