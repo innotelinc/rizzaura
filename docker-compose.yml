@@ -59,7 +59,7 @@ services:
       # AI achievement recommendations — OmniRoute (OpenAI-compatible LLM API
       # proxy, profile "ai" below) by default; any OpenAI-compatible endpoint
       # works (OpenAI, Groq, Together, Ollama, ...).
-      AI_BASE_URL: "${AI_BASE_URL:-http://omniroute:20128/v1}"
+      AI_BASE_URL: "${AI_BASE_URL:-https://api.openai.com/v1}"
       AI_API_KEY: "${AI_API_KEY:-}"
       AI_MODEL: "${AI_MODEL:-gpt-4o-mini}"
     volumes:
@@ -158,6 +158,7 @@ services:
 
   # ── Authentik — identity provider + SSO (auth.<domain>) ───────────────────
   authentik-postgres:
+    profiles: ["authentik"]
     image: docker.io/library/postgres:16-alpine
     container_name: authentik-postgres
     restart: unless-stopped
@@ -176,6 +177,7 @@ services:
     networks: [rizz-net]
 
   authentik-redis:
+    profiles: ["authentik"]
     image: docker.io/library/redis:7-alpine
     container_name: authentik-redis
     restart: unless-stopped
@@ -196,6 +198,7 @@ services:
     networks: [rizz-net]
 
   authentik-server:
+    profiles: ["authentik"]
     image: ghcr.io/goauthentik/server:${AUTHENTIK_VERSION:-2025.6.3}
     container_name: authentik-server
     restart: unless-stopped
@@ -231,6 +234,7 @@ services:
     networks: [rizz-net]
 
   authentik-worker:
+    profiles: ["authentik"]
     image: ghcr.io/goauthentik/server:${AUTHENTIK_VERSION:-2025.6.3}
     container_name: authentik-worker
     restart: unless-stopped
