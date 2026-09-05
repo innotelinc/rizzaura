@@ -112,7 +112,7 @@ export function reducer(state, action) {
       return st;
     }
     case "PAID_ORDER": {
-      // A real-money order confirmed via Stripe (reported back through /api/order/:id)
+      // A real-money order confirmed via Magnate (reported back through /api/order/:id)
       const product = action.payload.product;
       if (product === "frame") {
         if (state.owned.includes("flexframe")) return state;

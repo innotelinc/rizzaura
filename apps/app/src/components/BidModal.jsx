@@ -215,7 +215,7 @@ export default function BidModal() {
           <span>I'm 18+ and this is a totally legit purchase of fictional internet aura 😌</span>
         </label>
         <div className="bid-note">
-          Payments are handled by Stripe. All aura is fictional — paid spots are fan hype, not
+          Payments are handled by Magnate (RevenueOps) — processed securely by Stripe. All aura is fictional — paid spots are fan hype, not
           endorsements, and don't belong to the people ranked on the free board.
         </div>
       </div>

@@ -67,23 +67,34 @@ function loadEnv() {
 }
 loadEnv();
 
-/* ------------------------- Stripe (Cash Shop) ------------------------- */
-const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY || "";
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
+/* ------------------------- Cash Shop (Magnate, RevenueOps) ------------------------- */
+// Rizz Aura never holds Stripe keys — Magnate owns billing for the whole
+// stack. /api/checkout asks Magnate for a one-time Checkout session
+// (POST {MAGNATE_PUBLIC_URL}/api/purchases); when the buyer pays, Magnate
+// POSTs a signed purchase.completed callback to /api/magnate/fulfill and
+// applyOrder() grants the item — exactly what the old local Stripe webhook
+// did, with the Stripe account living on Magnate.
+const MAGNATE_URL = (process.env.MAGNATE_PUBLIC_URL || "").replace(/\/+$/, "");
+// Server-to-server bearer — must equal Magnate's ENTITLEMENTS_API_TOKEN when
+// Magnate gates its APIs (empty = open, trusted net).
+const MAGNATE_API_TOKEN = process.env.MAGNATE_API_TOKEN || "";
+// Shared HMAC secret for fulfillment callbacks — must equal Magnate's
+// MAGNATE_PURCHASE_FULFILLMENT_SECRET.
+const MAGNATE_FULFILLMENT_SECRET = process.env.MAGNATE_FULFILLMENT_SECRET || "";
 const APP_URL = (process.env.APP_URL || `http://localhost:${PORT}`).replace(/\/$/, "");
 
-async function stripePost(pathname, params) {
-  const r = await fetch("https://api.stripe.com/v1" + pathname, {
+async function magnatePost(pathname, payload) {
+  const r = await fetch(MAGNATE_URL + pathname, {
     method: "POST",
     headers: {
-      Authorization: "Bearer " + STRIPE_SECRET,
-      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Type": "application/json",
+      ...(MAGNATE_API_TOKEN ? { Authorization: "Bearer " + MAGNATE_API_TOKEN } : {}),
     },
-    body: new URLSearchParams(params).toString(),
+    body: JSON.stringify(payload),
   });
-  const j = await r.json();
+  const j = await r.json().catch(() => ({}));
   if (!r.ok) {
-    const err = new Error(j.error?.message || "stripe error " + r.status);
+    const err = new Error(j.error || "magnate error " + r.status);
     err.status = r.status;
     throw err;
   }
@@ -544,13 +555,13 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true, players: getState().players });
     }
 
-    /* ── Cash Shop (Stripe) ───────────────────────────────────── */
+    /* ── Cash Shop (Magnate, RevenueOps) ──────────────────────── */
     if (pathname === "/api/checkout" && req.method === "POST") {
-      if (!STRIPE_SECRET) return json(res, 200, { ok: false, error: "not_configured" });
+      if (!MAGNATE_URL) return json(res, 200, { ok: false, error: "not_configured" });
       const { product, name, handle, emoji, target, amount } = await readBody(req);
       let unitAmount = 0;
       let productName = "Rizz Aura Flex";
-      let metadata = { product: String(product || ""), ip };
+      let meta = { sku: String(product || ""), ip };
       if (product === "slot") {
         const n = String(name || "")
           .trim()
@@ -560,8 +571,8 @@ const server = http.createServer(async (req, res) => {
         if (!Number.isFinite(cents)) return json(res, 400, { ok: false, error: "bad amount" });
         unitAmount = cents;
         productName = "Aura Board Slot — " + n;
-        metadata = {
-          product: "slot",
+        meta = {
+          sku: "slot",
           name: n,
           handle: String(handle || "")
             .trim()
@@ -574,64 +585,65 @@ const server = http.createServer(async (req, res) => {
         if (!p) return json(res, 400, { ok: false, error: "bad target" });
         unitAmount = CASH_SHOP.golden.price;
         productName = "Cash Golden Upvote → " + p.name;
-        metadata = { product: "golden", target: p.id, ip };
+        meta = { sku: "golden", target: p.id, ip };
       } else if (product === "frame") {
         unitAmount = CASH_SHOP.frame.price;
         productName = "Permanent Flex Frame";
-        metadata = { product: "frame", ip };
+        meta = { sku: "frame", ip };
       } else {
         return json(res, 400, { ok: false, error: "bad payload" });
       }
-      const session = await stripePost("/checkout/sessions", {
-        mode: "payment",
+      const session = await magnatePost("/api/purchases", {
+        item: { slug: product, name: productName, unitAmountCents: unitAmount },
+        metadata: meta,
         success_url: APP_URL + "/?paid=1&session={CHECKOUT_SESSION_ID}",
         cancel_url: APP_URL + "/?paid=0",
-        "line_items[0][quantity]": "1",
-        "line_items[0][price_data][currency]": "usd",
-        "line_items[0][price_data][unit_amount]": String(unitAmount),
-        "line_items[0][price_data][product_data][name]": productName,
-        "metadata[product]": metadata.product,
-        "metadata[name]": metadata.name || "",
-        "metadata[handle]": metadata.handle || "",
-        "metadata[emoji]": metadata.emoji || "",
-        "metadata[target]": metadata.target || "",
       });
       return json(res, 200, { ok: true, url: session.url, id: session.id });
     }
 
-    if (pathname === "/api/webhook" && req.method === "POST") {
+    /* ── Magnate fulfillment callback (purchase.completed) ───────── */
+    if (pathname === "/api/magnate/fulfill" && req.method === "POST") {
       const raw = await readRawBody(req);
-      if (!STRIPE_WEBHOOK_SECRET) return json(res, 400, { ok: false, error: "not_configured" });
-      const sig = req.headers["stripe-signature"] || "";
-      const tMatch = sig.match(/t=(\d+)/);
-      const vMatch = sig.match(/v1=([0-9a-f]+)/);
-      if (!tMatch || !vMatch) return json(res, 400, { ok: false, error: "bad signature" });
-      if (Math.abs(Date.now() / 1000 - Number(tMatch[1])) > 300)
-        return json(res, 400, { ok: false, error: "expired signature" });
+      if (!MAGNATE_FULFILLMENT_SECRET)
+        return json(res, 503, { ok: false, error: "not_configured" });
+      const sig = req.headers["x-magnate-signature"] || "";
+      if (!sig || sig === "unsigned")
+        return json(res, 400, {
+          ok: false,
+          error:
+            "unsigned callback — set MAGNATE_FULFILLMENT_SECRET on both Magnate and Rizz Aura",
+        });
       const expected = crypto
-        .createHmac("sha256", STRIPE_WEBHOOK_SECRET)
-        .update(tMatch[1] + "." + raw)
+        .createHmac("sha256", MAGNATE_FULFILLMENT_SECRET)
+        .update(raw)
         .digest("hex");
       const a = Buffer.from(expected);
-      const b = Buffer.from(vMatch[1]);
+      const b = Buffer.from(sig);
       if (a.length !== b.length || !crypto.timingSafeEqual(a, b))
         return json(res, 400, { ok: false, error: "bad signature" });
       const evt = JSON.parse(raw);
-      if (evt.type === "checkout.session.completed") {
-        const s = evt.data.object;
-        const m = s.metadata || {};
+      if (evt.type !== "purchase.completed")
+        return json(res, 400, { ok: false, error: "unexpected event type" });
+      const m = evt.metadata || {};
+      const sessionId = String(evt.session_id || "");
+      if (!sessionId) return json(res, 400, { ok: false, error: "missing session_id" });
+      // Idempotent by session id: Magnate retries a callback until this
+      // returns 2xx, so already-applied orders are acknowledged, not re-applied.
+      const seen = Boolean(getState().orders[sessionId]);
+      if (!seen) {
         applyOrder({
-          sessionId: s.id,
-          product: m.product,
+          sessionId,
+          product: m.sku || (evt.item && evt.item.slug) || "",
           name: m.name,
           handle: m.handle,
           emoji: m.emoji,
           target: m.target,
-          cents: s.amount_total || 0,
+          cents: evt.amount_cents || 0,
         });
         saveState();
       }
-      return json(res, 200, { ok: true });
+      return json(res, 200, { ok: true, duplicate: seen });
     }
 
     if (pathname.startsWith("/api/order/") && req.method === "GET") {

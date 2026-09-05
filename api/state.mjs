@@ -17,7 +17,7 @@ let state = {
   censusByIp: {},
   players: 12847,
   bids: [], // paid Clout Board slots: { id, name, handle, emoji, cents, verified, ts }
-  orders: {}, // paid orders keyed by Stripe session id
+  orders: {}, // paid orders keyed by Magnate checkout session id
   // platform accounts (keyed by Authentik sub)
   users: {},
   achievements: [], // grants: { player, badge, ts }

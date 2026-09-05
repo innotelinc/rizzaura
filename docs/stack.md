@@ -26,7 +26,7 @@ provides, and explicitly does not own.
 ## Consumes
 
 - Authentik — identity, SSO, admin roles
-- Infisical — secrets, Stripe keys, AI keys
+- Infisical — secrets, Magnate API token, AI keys
 - Magnate — payments and entitlements
 - NPM Edge — public routing, TLS termination at the edge
 

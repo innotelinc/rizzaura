@@ -27,7 +27,7 @@ function Shell() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // After Stripe redirects back (?session=...), confirm the order, apply
+  // After checkout redirects back (?session=...), confirm the order, apply
   // local cosmetics, then clean the URL. Retries a few times in case the
   // webhook hasn't landed yet.
   useEffect(() => {

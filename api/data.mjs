@@ -736,7 +736,7 @@ export const FEED_TEMPLATES = [
   "{a} paid to stand above {b}. No votes. Just bag. 💸",
 ];
 
-/* ------------------------- Cash Shop (real money, Stripe) ------------------------- */
+/* ------------------------- Cash Shop (real money, via Magnate) ------------------------- */
 // Prices in cents (USD). `slot` is the outbid.lol mechanic: rank is what you pay.
 export const CASH_SHOP = {
   slot: {
