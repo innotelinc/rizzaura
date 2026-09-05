@@ -114,7 +114,12 @@ git clone https://innotelinc.github.io/rizzaura.git && cd rizzaura-platform
 3. Provisions Authentik (`scripts/provision-authentik.py`): creates the
    **Rizz Aura SSO** OIDC provider (redirect → `api.<domain>/api/auth/callback`),
    the **Rizz Aura** application, and the `rizz-aura-admins` group, then writes
-   `AUTHENTIK_CLIENT_ID/SECRET` into `.env` and restarts the API
+   `AUTHENTIK_CLIENT_ID/SECRET` into `.env` and restarts the API.
+   **Cerulean mode (default here):** `AUTHENTIK_ISSUER` is provider-scoped to the
+   shared Cerulean Authentik (`https://auth.rizz.innotel.us/application/o/rizz-aura/`)
+   and the `rizz-aura-web` client is registered in Cerulean — `auth.rizz.innotel.us`
+   fronts Cerulean, so SSO runs through the shared identity plane without booting
+   the bundled Authentik profile.
 4. Provisions Nginx Proxy Manager (`scripts/npm-proxy-hosts.py`) — the six
    proxy hosts + **one wildcard `*.<domain>` certificate** via DNS-01
 5. Mints the OmniRoute API key and wires it into `AI_API_KEY` (when the AI
