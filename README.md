@@ -40,7 +40,8 @@ slots rank at the top, outbid.lol style — **rank is what you pay.** 💰
 - **Teams & competitions** — form teams, join live competitions, and win the
   platform championship.
 - **Cash Shop** — Board Slots, Cash Golden Upvotes, Permanent Flex Frames via
-  Stripe Checkout.
+  **Magnate (RevenueOps)** Checkout — the Stripe account lives on Magnate,
+  never here.
 
 ## Architecture
 
@@ -53,7 +54,7 @@ Nginx Proxy Manager:
 | **rankings**  | `rankings.<domain>`  | 3011 | Real-time leaderboards, seasons, Hall of Fame, prestige       |
 | **community** | `community.<domain>` | 3012 | Live feed, teams, competitions, census                        |
 | **admin**     | `admin.<domain>`     | 3013 | Admin control center (Authentik `rizz-aura-admins` role only) |
-| **api**       | `api.<domain>`       | 8000 | Zero-dependency Node API: OIDC SSO, SSE, Stripe, AI, state    |
+| **api**       | `api.<domain>`       | 8000 | Zero-dependency Node API: OIDC SSO, SSE, Magnate cash shop, AI, state |
 | **auth**      | `auth.<domain>`      | 9000 | Authentik — identity provider + SSO for every service         |
 
 ```
@@ -78,7 +79,10 @@ cross-links — change it in one place and re-run `./scripts/setup.sh`.
   events; every frontend falls back to polling when the stream drops.
 - **SSO:** Authentik OIDC (authorization-code flow, signed HttpOnly session
   cookies, role-gated admin).
-- **Payments:** Stripe Checkout via REST over `fetch`.
+- **Payments:** one-time Checkout sessions through **Magnate (RevenueOps)**
+  via REST over `fetch` — Magnate owns the Stripe account and pushes a signed
+  `purchase.completed` callback to `/api/magnate/fulfill` to grant the item.
+  Rizz Aura holds no Stripe keys.
 
 ## 🚀 Quick start (development)
 
@@ -232,8 +236,8 @@ credentials).
 | `/api/teams/:id/join              | leave`   | POST                                                                 | Join / leave a team |
 | `/api/competitions`               | POST     | Create a competition (admin) (`{ name, type, days }`)                |
 | `/api/competitions/:id/enter`     | POST     | Enter your team into a live competition                              |
-| `/api/checkout`                   | POST     | Stripe Checkout session (`{ product: slot\|golden\|frame, ... }`)    |
-| `/api/webhook`                    | POST     | Stripe webhook (verified `checkout.session.completed`)               |
+| `/api/checkout`                   | POST     | Magnate one-time Checkout session (`{ product: slot\|golden\|frame, ... }`) |
+| `/api/magnate/fulfill`            | POST     | Magnate `purchase.completed` callback (HMAC-verified) — grants the paid item |
 | `/api/order/:id`                  | GET      | Look up a paid order by session id                                   |
 | `/api/admin/stats`                | GET      | Admin: players, votes, revenue, badges, season                       |
 | `/api/admin/achievements/grant`   | POST     | Admin: grant a badge (`{ player, badge }`)                           |
@@ -270,7 +274,7 @@ apps/
   community/   # feed, teams, competitions
   admin/       # admin control center (role-gated)
   shared/      # design system, API client, SSE hook, formatters
-api/           # zero-dep Node server: OIDC, SSE, achievements, seasons, Stripe, AI
+api/           # zero-dep Node server: OIDC, SSE, achievements, seasons, Magnate cash shop, AI
 scripts/       # setup.sh, npm-proxy-hosts.py, provision-authentik.py, artifacts
 .githooks/     # commit-attribution guard (blocks AI/assistant co-author trailers)
 ```

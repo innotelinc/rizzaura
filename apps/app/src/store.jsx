@@ -227,7 +227,7 @@ export function StoreProvider({ children }) {
       closeGolden: () => dispatch({ type: "CLOSE_GOLDEN" }),
       openBid: () => dispatch({ type: "OPEN_BID" }),
       closeBid: () => dispatch({ type: "CLOSE_BID" }),
-      // Cash Shop — create a Stripe Checkout session and send the buyer over.
+      // Cash Shop — create a Magnate one-time Checkout session and send the buyer over.
       checkout: async (spec) => {
         try {
           const res = await api("/api/checkout", {
@@ -239,7 +239,7 @@ export function StoreProvider({ children }) {
               type: "TOAST",
               payload:
                 res.error === "not_configured"
-                  ? "Cash shop isn't live yet 💀 Stripe keys not set"
+                  ? "Cash shop isn't live yet 💀 Magnate billing not configured"
                   : "Checkout glitched 💀 Try again",
             });
             return;
@@ -249,7 +249,7 @@ export function StoreProvider({ children }) {
           dispatch({ type: "TOAST", payload: "Can't reach the Rizz Aura server 💀" });
         }
       },
-      // After Stripe redirects back (?session=...), confirm the order and
+      // After checkout redirects back (?session=...), confirm the order and
       // apply any client-side cosmetics. Returns true when confirmed.
       applyPaidOrder: async (sessionId) => {
         try {

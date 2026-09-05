@@ -20,7 +20,7 @@ export default function Market() {
           <b>Broke but famous? Out of coins but full of main-character energy?</b>
           <p>
             The <b>Cash Shop</b> is where the bag lives: board slots (rank is what you pay), cash
-            Golden Upvotes (+500 aura), and the permanent Flex Frame. Stripe-secured. Zero shame.
+            Golden Upvotes (+500 aura), and the permanent Flex Frame. Processed via Magnate (RevenueOps). Zero shame.
           </p>
         </div>
         <button className="btn cash" onClick={actions.openBid}>

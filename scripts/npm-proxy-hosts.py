@@ -64,7 +64,7 @@ Subdomains (each service gets <sub>.<NPM_BASE_DOMAIN>):
   rankings.<domain>     Real-time rankings / seasons / HoF       :3011
   community.<domain>    Feed, battles, teams, competitions       :3012
   admin.<domain>        Admin control center                     :3013
-  api.<domain>          Platform API (OIDC, SSE, Stripe, AI)     :8000
+  api.<domain>          Platform API (OIDC, SSE, Magnate cash shop, AI)     :8000
   auth.<domain>         Authentik (SSO / user management)        :9000
 
 The old single-origin host (<base> apex serving the old monolith) is pruned
