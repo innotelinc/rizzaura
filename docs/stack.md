@@ -28,6 +28,7 @@ provides, and explicitly does not own.
 - Authentik — identity, SSO, admin roles
 - Infisical — secrets, Stripe keys, AI keys
 - Magnate — payments and entitlements
+- NPM Edge — public routing, TLS termination at the edge
 
 ## Explicitly does NOT own
 
