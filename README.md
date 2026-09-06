@@ -19,7 +19,7 @@ slots rank at the top, outbid.lol style — **rank is what you pay.** 💰
 > **About Rizz Aura** — the self-hosted aura leaderboard platform for ranking creators,
 > brands, streamers, athletes, and friends: real-time leaderboards, achievements and
 > badges, seasonal championships, a Hall of Fame, AI-powered achievement
-> recommendations, and paid board slots — with Authentik SSO and a zero-dependency Node
+> recommendations, and paid board slots — with Cerulean Authentik SSO and a zero-dependency Node
 > API. **Landing page:** [innotelinc.github.io/rizzaura](https://innotelinc.github.io/rizzaura)
 
 ---
@@ -53,9 +53,9 @@ Nginx Proxy Manager:
 | **app**       | `app.<domain>`       | 3010 | Main app: battles, census, market, cash shop, profile         |
 | **rankings**  | `rankings.<domain>`  | 3011 | Real-time leaderboards, seasons, Hall of Fame, prestige       |
 | **community** | `community.<domain>` | 3012 | Live feed, teams, competitions, census                        |
-| **admin**     | `admin.<domain>`     | 3013 | Admin control center (Authentik `rizz-aura-admins` role only) |
+| **admin**     | `admin.<domain>`     | 3013 | Admin control center (Cerulean Authentik `rizz-aura-admins` role only) |
 | **api**       | `api.<domain>`       | 8000 | Zero-dependency Node API: OIDC SSO, SSE, Magnate cash shop, AI, state |
-| **auth**      | `auth.<domain>`      | 9000 | Authentik — identity provider + SSO for every service         |
+| **auth**      | `auth.cerulean.<domain>` | — | Cerulean Authentik — identity provider + SSO (shared) |
 
 ```
 Browser ──► Nginx Proxy Manager (wildcard *.<domain> TLS)
