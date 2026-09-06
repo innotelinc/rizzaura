@@ -14,8 +14,8 @@
 #   community.<domain>  → community (3012)
 #   admin.<domain>      → admin     (3013)
 #   api.<domain>        → api       (8000)
-#   auth.<domain>       → authentik (9000)
-#   (optional profile "ai": OmniRoute LLM API proxy on 20128)
+#   auth.<domain>       → Cerulean Authentik (SSO)
+#   (optional profile "ai": OmniRoute LLM API proxy on 20128 via Zeus)
 # ──────────────────────────────────────────────────────────────────────────────
 name: rizzaura
 
@@ -25,11 +25,6 @@ networks:
 
 volumes:
   rizz-data: # api state (data/state.json)
-  authentik_postgres:
-  authentik_redis:
-  authentik_media:
-  authentik_templates:
-  omniroute_data:
 
 services:
   # ── Platform API ──────────────────────────────────────────────────────────
@@ -49,10 +44,6 @@ services:
       APP_ORIGINS: "${APP_ORIGINS:-https://app.${BASE_DOMAIN:-rizz.innotel.us},https://rankings.${BASE_DOMAIN:-rizz.innotel.us},https://community.${BASE_DOMAIN:-rizz.innotel.us},https://admin.${BASE_DOMAIN:-rizz.innotel.us}}"
       SESSION_SECRET: "${SESSION_SECRET:-change-me}"
       # Authentik SSO (auth.<domain>)
-      AUTHENTIK_ISSUER: "${AUTHENTIK_ISSUER:-https://auth.${BASE_DOMAIN:-rizz.innotel.us}}"
-      AUTHENTIK_CLIENT_ID: "${AUTHENTIK_CLIENT_ID:-}"
-      AUTHENTIK_CLIENT_SECRET: "${AUTHENTIK_CLIENT_SECRET:-}"
-      AUTHENTIK_ADMIN_GROUP: "${AUTHENTIK_ADMIN_GROUP:-rizz-aura-admins}"
       # Cash Shop — Magnate (RevenueOps) owns billing; Rizz Aura holds no
       # Stripe keys. MAGNATE_API_TOKEN must equal Magnate's
       # ENTITLEMENTS_API_TOKEN when Magnate gates its APIs.
@@ -140,123 +131,8 @@ services:
   # OpenAI-compatible at http://omniroute:20128/v1. Opt-in via profile so the
   # default stack stays lean: `docker compose --profile ai up -d`. setup.sh
   # boots it when OMNIROUTE_INITIAL_PASSWORD is set and mints the API key.
-  omniroute:
-    image: ${OMNIROUTE_IMAGE:-diegosouzapw/omniroute:latest}
-    container_name: omniroute
-    restart: unless-stopped
-    profiles: ["ai"]
-    environment:
-      DATA_DIR: /app/data
-      PORT: "20128"
-      DASHBOARD_PORT: "20128"
-      JWT_SECRET: "${OMNIROUTE_JWT_SECRET:-change-me-omniroute-jwt}"
-      API_KEY_SECRET: "${OMNIROUTE_API_KEY_SECRET:-change-me-omniroute-api-key}"
-      INITIAL_PASSWORD: "${OMNIROUTE_INITIAL_PASSWORD:-change-me-omniroute-admin}"
-      OMNIROUTE_WS_BRIDGE_SECRET: "${OMNIROUTE_WS_BRIDGE_SECRET:-change-me-omniroute-ws}"
-    ports:
-      - "20128:20128"
-    volumes:
-      - omniroute_data:/app/data
-    networks: [rizz-net]
 
   # ── Authentik — identity provider + SSO (auth.<domain>) ───────────────────
-  authentik-postgres:
-    profiles: ["authentik"]
-    image: docker.io/library/postgres:16-alpine
-    container_name: authentik-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: authentik
-      POSTGRES_USER: authentik
-      POSTGRES_PASSWORD: "${AUTHENTIK_POSTGRES_PASSWORD:?set AUTHENTIK_POSTGRES_PASSWORD in your .env}"
-    volumes:
-      - authentik_postgres:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U authentik -d authentik"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-    networks: [rizz-net]
 
-  authentik-redis:
-    profiles: ["authentik"]
-    image: docker.io/library/redis:7-alpine
-    container_name: authentik-redis
-    restart: unless-stopped
-    command:
-      [
-        "redis-server",
-        "--requirepass",
-        "${AUTHENTIK_REDIS_PASSWORD:?set AUTHENTIK_REDIS_PASSWORD in your .env}",
-      ]
-    volumes:
-      - authentik_redis:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${AUTHENTIK_REDIS_PASSWORD:?}", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-    networks: [rizz-net]
 
-  authentik-server:
-    profiles: ["authentik"]
-    image: ghcr.io/goauthentik/server:${AUTHENTIK_VERSION:-2025.6.3}
-    container_name: authentik-server
-    restart: unless-stopped
-    command: server
-    ports:
-      - "9000:9000" # NPM proxy target (auth.<domain>)
-    environment:
-      AUTHENTIK_SECRET_KEY: "${AUTHENTIK_SECRET_KEY:?set AUTHENTIK_SECRET_KEY in your .env}"
-      AUTHENTIK_TOKEN: "${AUTHENTIK_TOKEN:?set AUTHENTIK_TOKEN in your .env}"
-      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
-      AUTHENTIK_POSTGRESQL__USER: authentik
-      AUTHENTIK_POSTGRESQL__NAME: authentik
-      AUTHENTIK_POSTGRESQL__PASSWORD: "${AUTHENTIK_POSTGRES_PASSWORD:?}"
-      AUTHENTIK_REDIS__HOST: authentik-redis
-      AUTHENTIK_REDIS__PASSWORD: "${AUTHENTIK_REDIS_PASSWORD:?}"
-      AUTHENTIK_PUBLIC_URL: "${AUTHENTIK_PUBLIC_URL:-https://auth.${BASE_DOMAIN:-rizz.innotel.us}}"
-      AUTHENTIK_BOOTSTRAP_EMAIL: "${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@rizz.innotel.us}"
-      AUTHENTIK_BOOTSTRAP_PASSWORD: "${AUTHENTIK_BOOTSTRAP_PASSWORD:-}"
-      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
-      AUTHENTIK_DEFAULT_TOKEN_LENGTH: "48"
-    volumes:
-      - authentik_media:/media
-      - authentik_templates:/templates
-    depends_on:
-      authentik-postgres: { condition: service_healthy }
-      authentik-redis: { condition: service_healthy }
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9000/if/health/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    networks: [rizz-net]
 
-  authentik-worker:
-    profiles: ["authentik"]
-    image: ghcr.io/goauthentik/server:${AUTHENTIK_VERSION:-2025.6.3}
-    container_name: authentik-worker
-    restart: unless-stopped
-    command: worker
-    environment:
-      AUTHENTIK_SECRET_KEY: "${AUTHENTIK_SECRET_KEY:?}"
-      AUTHENTIK_TOKEN: "${AUTHENTIK_TOKEN:?}"
-      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
-      AUTHENTIK_POSTGRESQL__USER: authentik
-      AUTHENTIK_POSTGRESQL__NAME: authentik
-      AUTHENTIK_POSTGRESQL__PASSWORD: "${AUTHENTIK_POSTGRES_PASSWORD:?}"
-      AUTHENTIK_REDIS__HOST: authentik-redis
-      AUTHENTIK_REDIS__PASSWORD: "${AUTHENTIK_REDIS_PASSWORD:?}"
-      AUTHENTIK_PUBLIC_URL: "${AUTHENTIK_PUBLIC_URL:-https://auth.${BASE_DOMAIN:-rizz.innotel.us}}"
-      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
-    volumes:
-      - authentik_media:/media
-      - authentik_templates:/templates
-    depends_on:
-      authentik-postgres: { condition: service_healthy }
-      authentik-redis: { condition: service_healthy }
-    networks: [rizz-net]
