@@ -1,6 +1,7 @@
 <div align="center">
 
 [![CI](https://github.com/innotelinc/rizzaura/actions/workflows/ci.yml/badge.svg)](https://github.com/innotelinc/rizzaura/actions/workflows/ci.yml)
+[![Conformity](https://github.com/innotelinc/rizzaura/actions/workflows/conform.yml/badge.svg)](https://github.com/innotelinc/rizzaura/actions/workflows/conform.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 
