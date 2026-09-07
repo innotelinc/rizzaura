@@ -64,7 +64,7 @@ Subdomains (each service gets <sub>.<NPM_BASE_DOMAIN>):
   rankings.<domain>     Real-time rankings / seasons / HoF       :3011
   community.<domain>    Feed, battles, teams, competitions       :3012
   admin.<domain>        Admin control center                     :3013
-  api.<domain>          Platform API (OIDC, SSE, Magnate cash shop, AI)     :8000
+  api.<domain>          Platform API (OIDC, SSE, Magnate cash shop, AI)     :3020
   auth.<domain>         Authentik (SSO / user management)        :9000
 
 The old single-origin host (<base> apex serving the old monolith) is pruned
@@ -95,7 +95,7 @@ DEFAULT_API_URL = "http://127.0.0.1:81"
 #
 # The canonical Rizz Aura subdomains: app/api/auth/rankings/community/admin.
 HOSTS: list[dict[str, Any]] = [
-    {"key": "api",       "sub": "api",       "scheme": "http",  "port": 8000,  "websocket": False, "name": "Rizz Aura API"},
+    {"key": "api",       "sub": "api",       "scheme": "http",  "port": 3020,  "websocket": False, "name": "Rizz Aura API"},
     {"key": "app",       "sub": "app",       "scheme": "http",  "port": 3010,  "websocket": False, "name": "Rizz Aura App"},
     {"key": "rankings",  "sub": "rankings",  "scheme": "http",  "port": 3011,  "websocket": False, "name": "Rizz Aura Rankings"},
     {"key": "community", "sub": "community", "scheme": "http",  "port": 3012,  "websocket": False, "name": "Rizz Aura Community"},
