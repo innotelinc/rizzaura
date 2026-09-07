@@ -1,5 +1,9 @@
 <div align="center">
 
+[![CI](https://github.com/innotelinc/rizzaura/actions/workflows/ci.yml/badge.svg)](https://github.com/innotelinc/rizzaura/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+
 # 🔥 Rizz Aura — Global Leaderboard Platform
 
 **The self-hosted aura leaderboard. Rank creators, brands, streamers, athletes, and your friends — earn clout, collect aura, form teams, win competitions, and prove who's really the main character.**
@@ -15,6 +19,18 @@ slots rank at the top, outbid.lol style — **rank is what you pay.** 💰
 [![Latest release](https://img.shields.io/github/v/release/innotelinc/rizzaura?color=f97316)](https://innotelinc.github.io/rizzaura/releases)
 
 </div>
+
+---
+
+## Why Rizz Aura
+
+| Problem | Rizz Aura answer |
+| --- | --- |
+| Leaderboards are clunky to self-host | Real-time SSE leaderboards, achievements, seasons, Hall of Fame, AI achievement recs |
+| Identity per-service password stores | Cerulean Authentik-first SSO; disable a user and their leaderboard access dies |
+| Paid slots are hard to wire | Paid board slots rank at the top; rank is what you pay, with Stripe under Magnate |
+| Secrets committed to .env or repos | Infisical is the only secrets store; .env is derived and gitignored |
+| Leaderboard platform is not an ecosystem citizen | Rizz Aura consumes Cerulean identity + Magnate billing and documents the contracts |
 
 > **About Rizz Aura** — the self-hosted aura leaderboard platform for ranking creators,
 > brands, streamers, athletes, and friends: real-time leaderboards, achievements and
@@ -293,6 +309,13 @@ Rizz Aura is the ecosystem's **CommunityOps** platform — leaderboards, reputat
 [**Innotel Platform Stack**](https://github.com/innotelinc/innotel-platform-stack) — the
 canonical single-responsibility architecture where Authentik owns identity, Infisical owns
 secrets, Cerulean owns trust, ONYX owns storage, Magnate owns revenue, NPM Edge owns the edge, and every other
-platform is a business function that consumes them. See
+platform is a 
+---
+
+## License
+
+Rizz Aura is licensed under the MIT License. See [LICENSE](LICENSE) for the full text.
+
+business function that consumes them. See
 [docs/stack.md](docs/stack.md) for this platform's owns/consumes boundaries and its
 Infisical secret setup.
