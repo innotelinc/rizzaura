@@ -35,7 +35,7 @@ services:
     container_name: rizz-api
     restart: unless-stopped
     ports:
-      - "8000:8000" # NPM proxy target (api.<domain>)
+      - "3020:8000" # NPM proxy target (api.<domain>) — host 3020, 8000 is signara's API
     environment:
       PORT: "8000"
       BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
