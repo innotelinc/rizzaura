@@ -6,8 +6,7 @@
 # REST API by scripts/npm-proxy-hosts.py (run by setup.sh).
 #
 # The domain is fully customizable via BASE_DOMAIN in .env (default
-# rizz.innotel.us; switch to rizzaura.net once DNS propagates). Every URL
-# below derives from it:
+# rizzaura.net). Every URL below derives from it:
 #
 #   app.<domain>        → app        (3010)
 #   rankings.<domain>   → rankings  (3011)
@@ -42,12 +41,16 @@ services:
       - "3020:8000" # NPM proxy target (api.<domain>) — host 3020, 8000 is signara's API
     environment:
       PORT: "8000"
-      BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
-      APP_URL: "${APP_URL:-https://app.${BASE_DOMAIN:-rizz.innotel.us}}"
-      API_URL: "${API_URL:-https://api.${BASE_DOMAIN:-rizz.innotel.us}}"
-      APP_ORIGINS: "${APP_ORIGINS:-https://app.${BASE_DOMAIN:-rizz.innotel.us},https://rankings.${BASE_DOMAIN:-rizz.innotel.us},https://community.${BASE_DOMAIN:-rizz.innotel.us},https://admin.${BASE_DOMAIN:-rizz.innotel.us}}"
+      BASE_DOMAIN: "${BASE_DOMAIN:-rizzaura.net}"
+      APP_URL: "${APP_URL:-https://app.${BASE_DOMAIN:-rizzaura.net}}"
+      API_URL: "${API_URL:-https://api.${BASE_DOMAIN:-rizzaura.net}}"
+      APP_ORIGINS: "${APP_ORIGINS:-https://app.${BASE_DOMAIN:-rizzaura.net},https://rankings.${BASE_DOMAIN:-rizzaura.net},https://community.${BASE_DOMAIN:-rizzaura.net},https://admin.${BASE_DOMAIN:-rizzaura.net}}"
       SESSION_SECRET: "${SESSION_SECRET:-change-me}"
       # Authentik SSO (auth.<domain>)
+      AUTHENTIK_ISSUER: "${AUTHENTIK_ISSUER:-https://auth.${BASE_DOMAIN:-rizzaura.net}}"
+      AUTHENTIK_CLIENT_ID: "${AUTHENTIK_CLIENT_ID:-}"
+      AUTHENTIK_CLIENT_SECRET: "${AUTHENTIK_CLIENT_SECRET:-}"
+      AUTHENTIK_ADMIN_GROUP: "${AUTHENTIK_ADMIN_GROUP:-rizz-aura-admins}"
       # Cash Shop — Magnate (RevenueOps) owns billing; Rizz Aura holds no
       # Stripe keys. MAGNATE_API_TOKEN must equal Magnate's
       # ENTITLEMENTS_API_TOKEN when Magnate gates its APIs.
@@ -80,12 +83,12 @@ services:
       context: .
       dockerfile: apps/app/Dockerfile
       args:
-        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizz.innotel.us}}"
-        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
+        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizzaura.net}}"
+        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizzaura.net}"
     container_name: rizz-app
     restart: unless-stopped
     ports:
-      - "3010:3010"
+      - "3021:3010"  # 3010 is capstone's dograh-ui on the shared box (/usr/src/projects/complete)
     depends_on: [api]
     networks: [rizz-net]
 
@@ -94,12 +97,12 @@ services:
       context: .
       dockerfile: apps/rankings/Dockerfile
       args:
-        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizz.innotel.us}}"
-        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
+        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizzaura.net}}"
+        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizzaura.net}"
     container_name: rizz-rankings
     restart: unless-stopped
     ports:
-      - "3011:3011"
+      - "3022:3011"  # 3011 is iptv's port on the shared box
     depends_on: [api]
     networks: [rizz-net]
 
@@ -108,8 +111,8 @@ services:
       context: .
       dockerfile: apps/community/Dockerfile
       args:
-        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizz.innotel.us}}"
-        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
+        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizzaura.net}}"
+        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizzaura.net}"
     container_name: rizz-community
     restart: unless-stopped
     ports:
@@ -122,8 +125,8 @@ services:
       context: .
       dockerfile: apps/admin/Dockerfile
       args:
-        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizz.innotel.us}}"
-        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizz.innotel.us}"
+        VITE_API_BASE: "${VITE_API_BASE:-https://api.${BASE_DOMAIN:-rizzaura.net}}"
+        VITE_BASE_DOMAIN: "${BASE_DOMAIN:-rizzaura.net}"
     container_name: rizz-admin
     restart: unless-stopped
     ports:

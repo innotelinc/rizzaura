@@ -98,8 +98,8 @@ DEFAULT_API_URL = "http://127.0.0.1:81"
 # The canonical Rizz Aura subdomains: app/api/auth/rankings/community/admin.
 HOSTS: list[dict[str, Any]] = [
     {"key": "api",       "sub": "api",       "scheme": "http",  "port": 3020,  "websocket": False, "name": "Rizz Aura API"},
-    {"key": "app",       "sub": "app",       "scheme": "http",  "port": 3010,  "websocket": False, "name": "Rizz Aura App"},
-    {"key": "rankings",  "sub": "rankings",  "scheme": "http",  "port": 3011,  "websocket": False, "name": "Rizz Aura Rankings"},
+    {"key": "app",       "sub": "app",       "scheme": "http",  "port": 3021,  "websocket": False, "name": "Rizz Aura App"},
+    {"key": "rankings",  "sub": "rankings",  "scheme": "http",  "port": 3022,  "websocket": False, "name": "Rizz Aura Rankings"},
     {"key": "community", "sub": "community", "scheme": "http",  "port": 3012,  "websocket": False, "name": "Rizz Aura Community"},
     {"key": "admin",     "sub": "admin",     "scheme": "http",  "port": 3013,  "websocket": False, "name": "Rizz Aura Admin"},
     {"key": "auth",      "sub": "auth",      "scheme": "http",  "port": 9000,  "websocket": False, "name": "Authentik (SSO / user management)"},
