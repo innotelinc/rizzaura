@@ -27,7 +27,9 @@ and server, save it as a credential, then:
     python3 scripts/npm-proxy-hosts.py --wildcard \
         --dns-provider rfc2136 --dns-credentials <credential-id>
 
-Environment variables (real env wins, then the capstone .env, then defaults):
+Environment variables (real env wins, then this repo's .env, then defaults).
+Because the real environment wins, a stale NPM_BASE_DOMAIN exported by another
+stack makes the script refuse to run rather than sync the wrong domain:
 
   NPM_API_URL             NPM base URL            (http://127.0.0.1:81)
   NPM_ADMIN_EMAIL         NPM admin login email   (required unless NPM_API_TOKEN)
@@ -246,12 +248,20 @@ def ensure_cert(api: NpmApi, domains: list[str], le_email: str,
         print(f"FAIL no Let's Encrypt certificate for {label}")
         failed.append(domains[0])
         return None
-    meta = {"letsencrypt_email": le_email, "letsencrypt_agree": True, "dns_challenge": False}
+    # NPM's certificate meta schema is strict (additionalProperties: false) and
+    # keeps the Let's Encrypt account email globally (Settings → Let's Encrypt),
+    # so a "letsencrypt_email"/"letsencrypt_agree" key here is a 400 rather than
+    # a setting — that is why issuing used to fail outright on this NPM version.
+    # Allowed keys: dns_challenge, dns_provider, dns_provider_credentials,
+    # propagation_seconds, key_type (+ certificate/certificate_key for manual).
+    # NPM_LETSENCRYPT_EMAIL still gates SSL on/off below; it just isn't sent.
+    meta: dict[str, Any] = {"dns_challenge": False, "key_type": "ecdsa"}
     if dns_provider and dns_credentials:
         meta.update({
             "dns_challenge": True,
             "dns_provider": dns_provider,
             "dns_provider_credentials": dns_credentials,
+            "propagation_seconds": 60,
         })
     try:
         cert = api.create_certificate({
@@ -309,11 +319,24 @@ def main() -> int:
     parser.add_argument("--no-ssl", action="store_true", help="skip certificates and HTTPS forcing")
     parser.add_argument("--no-prune", action="store_true", help="never delete NPM hosts")
     parser.add_argument("--check", action="store_true", help="verify only — no writes, exit 1 if out of sync")
-    parser.add_argument("--env-file", default=str(repo / ".env"), help="capstone .env path")
+    parser.add_argument("--env-file", default=str(repo / ".env"), help="this repo's .env path")
     args = parser.parse_args()
     args.env = load_env_file(Path(args.env_file))
 
     api_url = args.api_url or cfg(args, "NPM_API_URL", DEFAULT_API_URL)
+
+    # Guard against a stale ambient NPM_* environment: cfg() lets the real
+    # environment win, so a leftover NPM_BASE_DOMAIN exported by another stack
+    # (e.g. capstone's .env in the operator's shell) makes THIS script manage
+    # and PRUNE that other service's proxy hosts. Refuse instead of writing.
+    ambient_domain = (os.environ.get("NPM_BASE_DOMAIN") or "").strip().lstrip(".").lower()
+    env_domain = (args.env.get("NPM_BASE_DOMAIN") or "").strip().lstrip(".").lower()
+    if ambient_domain and env_domain and ambient_domain != env_domain and not args.base_domain:
+        print(f"FAIL NPM_BASE_DOMAIN={ambient_domain} is exported in the environment but this "
+              f"repo's .env says {env_domain} — refusing to touch {ambient_domain} hosts "
+              f"(unset the variable, or pass --base-domain explicitly).", file=sys.stderr)
+        return 1
+
     base_domain = (args.base_domain or cfg(args, "NPM_BASE_DOMAIN", "")).strip().lstrip(".")
     # Stack convention (central stack-lib.sh): explicit wins, else the LAN IP.
     upstream = (args.upstream_host or cfg(args, "NPM_UPSTREAM_HOST", "")
