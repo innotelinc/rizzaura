@@ -97,8 +97,18 @@ DEFAULT_API_URL = "http://127.0.0.1:81"
 #   websocket enable allow_websocket_upgrade
 #   name      human label for PASS/FAIL output
 #
-# The canonical Rizz Aura subdomains: app/api/auth/rankings/community/admin.
+# The canonical Rizz Aura subdomains: app/api/auth/rankings/community/admin,
+# plus the shared subscribe portal.
+#
+# `subscribe` is a different animal from the rest: it is not served by this
+# compose stack but by the shared Innotel subscribe portal (innotel-platform-
+# stack, host :3040), which picks the pricing page by Host header — the same
+# page that also answers on subscribe.rizzaura.innotel.us. It is listed here so
+# every name under this zone has exactly one owner and a prune can never drop
+# it. Its certificate can only be issued once the rizzaura.net registry
+# delegation points at ns1/ns2.innotel.us — see README "DNS prerequisite".
 HOSTS: list[dict[str, Any]] = [
+    {"key": "subscribe", "sub": "subscribe", "scheme": "http",  "port": 3040,  "websocket": False, "name": "Subscribe portal (pricing / checkout)"},
     {"key": "api",       "sub": "api",       "scheme": "http",  "port": 3020,  "websocket": False, "name": "Rizz Aura API"},
     {"key": "app",       "sub": "app",       "scheme": "http",  "port": 3021,  "websocket": False, "name": "Rizz Aura App"},
     {"key": "rankings",  "sub": "rankings",  "scheme": "http",  "port": 3022,  "websocket": False, "name": "Rizz Aura Rankings"},
