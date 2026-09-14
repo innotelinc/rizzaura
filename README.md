@@ -165,9 +165,24 @@ rankings` records for `rizzaura.net`, and answers authoritatively from
   that edge), which is why the six proxy hosts here have no certificate.
 
 **Fix (registrar, one-time):** set `rizzaura.net`'s nameservers to
-`ns1.innotel.us` + `ns2.innotel.us`. Once the delegation propagates, re-run
-`./scripts/npm-proxy-hosts.py` and the certs issue normally. No change on this
-host can substitute for it.
+`ns1.innotel.us` + `ns2.innotel.us`. No change on this host can substitute for
+it. Then, once the delegation has propagated:
+
+```bash
+./scripts/check-public-dns.py        # every host must PASS before the next step
+./scripts/npm-proxy-hosts.py         # issues the per-host certificates now that
+                                     # HTTP-01 challenges reach this edge
+./scripts/check-public-dns.py        # re-verify TLS end to end
+```
+
+`check-public-dns.py` is the check that catches this class of failure: it
+compares the SOA primary nameserver the public resolvers report with the one our
+own nameserver reports — a recursive resolver only echoes the zone's *own* NS
+RRset, so a foreign delegation is invisible to a normal `dig` of the domain.
+
+Until the delegation moves, `subscribe.rizzaura.net` (and the six service hosts)
+exist here without certificates: the proxy hosts and the internal A records are
+already in place, so the cutover is a nameserver change and one re-run.
 
 ### Wildcard SSL with TSIG
 
@@ -309,6 +324,7 @@ npm run lint           # eslint .
 npm run format:check   # prettier --check .
 ./scripts/setup.sh                  # one-command deployment bootstrap
 ./scripts/npm-proxy-hosts.py        # sync NPM proxy hosts (--check to verify)
+./scripts/check-public-dns.py       # is the domain publicly delegated to us?
 ./scripts/provision-authentik.py    # provision Authentik OIDC provider/app
 ./scripts/build-release-artifacts.sh# bundle release payloads
 ```
