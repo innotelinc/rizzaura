@@ -143,6 +143,32 @@ git clone https://innotelinc.github.io/rizzaura.git && cd rizzaura-platform
    profile is enabled)
 6. Smoke-tests `/api/state`, `/api/me`, `/api/seasons`
 
+### DNS prerequisite for `rizzaura.net`
+
+Before the stack can be reached publicly on `rizzaura.net`, the **registry
+delegation** must point at this platform's nameservers. It currently does not:
+
+```bash
+dig @a.gtld-servers.net rizzaura.net NS +norecurse
+# rizzaura.net. 172800 IN NS ns1.hosting.businessidentity.llc.
+# rizzaura.net. 172800 IN NS ns2.hosting.businessidentity.llc.
+```
+
+Every other innotel service is served by the in-house zone on
+`ns1/ns2.innotel.us` (which already holds correct `app/api/admin/community/
+rankings` records for `rizzaura.net`, and answers authoritatively from
+`lab.innotel.us`). While the delegation points at the third-party host:
+
+- public `app/api/admin/...` requests land on that provider's WordPress edge
+  and return **404** (its `*.rizzaura.net` wildcard), never reaching this stack;
+- Let's Encrypt **HTTP-01 can never validate** (the challenge is served from
+  that edge), which is why the six proxy hosts here have no certificate.
+
+**Fix (registrar, one-time):** set `rizzaura.net`'s nameservers to
+`ns1.innotel.us` + `ns2.innotel.us`. Once the delegation propagates, re-run
+`./scripts/npm-proxy-hosts.py` and the certs issue normally. No change on this
+host can substitute for it.
+
 ### Wildcard SSL with TSIG
 
 NPM issues wildcard certificates through DNS-01. For a TSIG/RFC2136
