@@ -30,7 +30,7 @@ slots rank at the top, outbid.lol style — **rank is what you pay.** 💰
 | Leaderboards are clunky to self-host | Real-time SSE leaderboards, achievements, seasons, Hall of Fame, AI achievement recs |
 | Identity per-service password stores | Cerulean Authentik-first SSO; disable a user and their leaderboard access dies |
 | Paid slots are hard to wire | Paid board slots rank at the top; rank is what you pay, with Stripe under Magnate |
-| Secrets committed to .env or repos | Infisical is the only secrets store; .env is derived and gitignored |
+| Secrets committed to .env or repos | Cerulean Vault is the only secrets store; .env carries derived references and is gitignored |
 | Leaderboard platform is not an ecosystem citizen | Rizz Aura consumes Cerulean identity + Magnate billing and documents the contracts |
 
 > **About Rizz Aura** — the self-hosted aura leaderboard platform for ranking creators,
@@ -350,7 +350,7 @@ scripts/       # setup.sh, npm-proxy-hosts.py, provision-authentik.py, artifacts
 
 Rizz Aura is the ecosystem's **CommunityOps** platform — leaderboards, reputation, achievements, and competitions in the
 [**Innotel Platform Stack**](https://github.com/innotelinc/innotel-platform-stack) — the
-canonical single-responsibility architecture where Authentik owns identity, Infisical owns
+canonical single-responsibility architecture where Authentik owns identity, Cerulean Vault owns
 secrets, Cerulean owns trust, ONYX owns storage, Magnate owns revenue, NPM Edge owns the edge, and every other
 platform is a 
 ---
@@ -361,4 +361,4 @@ Rizz Aura is licensed under the MIT License. See [LICENSE](LICENSE) for the full
 
 business function that consumes them. See
 [docs/stack.md](docs/stack.md) for this platform's owns/consumes boundaries and its
-Infisical secret setup.
+Cerulean Vault secret setup.

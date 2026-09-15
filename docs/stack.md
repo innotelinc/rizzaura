@@ -26,7 +26,7 @@ provides, and explicitly does not own.
 ## Consumes
 
 - Authentik — identity, SSO, admin roles
-- Infisical — secrets, Magnate API token, AI keys
+- Cerulean Vault — secrets, Magnate API token, AI keys
 - Magnate — payments and entitlements
 - NPM Edge — public routing, TLS termination at the edge
 
@@ -36,10 +36,15 @@ provides, and explicitly does not own.
 - Billing (Magnate)
 
 
-## Secrets (Infisical)
+## Secrets (Cerulean Vault)
 
-Secrets for this platform live in **Infisical** (SecretOps): credentials are imported
-into an Infisical workspace and the stack's `.env` is derived from it. Enable it with:
+The platform's SecretOps is **Cerulean Vault** — HashiCorp Vault, KV v2, hosted by
+Cerulean — with `vault://<mount>/<path>#<key>` references in `.env`.
+
+### Legacy: the Infisical profile
+
+This stack currently still imports its credentials into an **Infisical** workspace and
+derives `.env` from it. Enable it with:
 
 ```bash
 # generate the required keys and add them to .env
@@ -57,7 +62,7 @@ See [compose.infisical.yml](../compose.infisical.yml) and
 
 ## Golden rules
 
-- **Authentik = Identity** · **Infisical = Secrets** · **Cerulean = Trust** ·
+- **Authentik = Identity** · **Cerulean Vault = Secrets** · **Cerulean = Trust** ·
   **ONYX = Storage** · **Magnate = Revenue** · **NPM Edge = Edge** — everything else is a business function.
 - No platform duplicates another's responsibility.
 - No credit in commits, footers, or headers to anyone but the project owner.
