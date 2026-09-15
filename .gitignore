@@ -7,3 +7,10 @@ apps/*/dist
 .DS_Store
 __pycache__/
 *.pyc
+
+# Cerulean Vault token copies (data/vault/token/<product>.token) — live
+# credentials. `data` above already covers them; spelled out so the reason
+# survives a future narrowing of that rule.
+data/vault/token/
+data/vault/init/
+data/vault/file/
