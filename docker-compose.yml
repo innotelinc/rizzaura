@@ -134,10 +134,11 @@ services:
     depends_on: [api]
     networks: [rizz-net]
 
-  # ── OmniRoute — self-hosted LLM API proxy for the AI recommendations ──────
-  # OpenAI-compatible at http://omniroute:20128/v1. Opt-in via profile so the
-  # default stack stays lean: `docker compose --profile ai up -d`. setup.sh
-  # boots it when OMNIROUTE_INITIAL_PASSWORD is set and mints the API key.
+  # ── OmniRoute — NOT here ──────────────────────────────────────────────────
+  # The LLM API proxy behind the AI recommendations is the platform's one
+  # gateway (Group 2, `2-voice`), on its own host; this project declares no
+  # service for it, so `omniroute` never resolves on rizz-net. AI_BASE_URL points
+  # at the SSO proxy in front of that gateway (:20129).
 
   # ── Authentik — identity provider + SSO (auth.<domain>) ───────────────────
 
