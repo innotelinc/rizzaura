@@ -242,7 +242,7 @@ docker compose --profile ai up -d
 
 `AI_BASE_URL` defaults to the platform's single OmniRoute gateway (Group 2,
 `2-voice/`), dialled through the Authentik SSO proxy in front of it —
-`http://192.168.1.46:20129/v1` — because the gateway's own `:20128` answers on its
+`http://192.168.1.46:20128/v1` — because the gateway's own `:20128` answers on its
 host's loopback and bridge alone. This stack runs no gateway of its own and its
 compose declares no `omniroute` service, so a compose service name is not an
 address here. `AI_MODEL` selects the model.
