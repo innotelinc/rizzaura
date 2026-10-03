@@ -144,36 +144,34 @@ git clone https://innotelinc.github.io/rizzaura.git && cd rizzaura-platform
    profile is enabled)
 6. Smoke-tests `/api/state`, `/api/me`, `/api/seasons`
 
-### DNS prerequisite for `rizzaura.net`
+### DNS prerequisite for `rizzaura.net` — done (2026-10-02)
 
-Before the stack can be reached publicly on `rizzaura.net`, the **registry
-delegation** must point at this platform's nameservers. It currently does not:
+The **registry delegation** for `rizzaura.net` now points at this platform's
+nameservers, so the zone resolves and validates against our own DNS plane:
 
 ```bash
 dig @a.gtld-servers.net rizzaura.net NS +norecurse
-# rizzaura.net. 172800 IN NS ns1.hosting.businessidentity.llc.
-# rizzaura.net. 172800 IN NS ns2.hosting.businessidentity.llc.
+# rizzaura.net. 172800 IN NS ns1.innotel.us.
+# rizzaura.net. 172800 IN NS ns2.innotel.us.
 ```
 
 Every other innotel service is served by the in-house zone on
 `ns1/ns2.innotel.us` (which already holds correct `app/api/admin/community/
 rankings` records for `rizzaura.net`, and answers authoritatively from
-`lab.innotel.us`). While the delegation points at the third-party host:
+`lab.innotel.us`). While the delegation still pointed at the third-party host:
 
 - public `app/api/admin/...` requests land on that provider's WordPress edge
   and return **404** (its `*.rizzaura.net` wildcard), never reaching this stack;
 - Let's Encrypt **HTTP-01 can never validate** (the challenge is served from
   that edge), which is why the six proxy hosts here have no certificate.
 
-**Fix (registrar, one-time):** set `rizzaura.net`'s nameservers to
-`ns1.innotel.us` + `ns2.innotel.us`. No change on this host can substitute for
-it. Then, once the delegation has propagated:
+**Fix (applied 2026-10-02):** `rizzaura.net`'s nameservers were set to
+`ns1.innotel.us` + `ns2.innotel.us`, the delegation propagated, and the
+`*.rizzaura.net` + apex certificates were issued through Cerulean's DNS-01 path
+and attached to the proxy hosts. Re-verify with:
 
 ```bash
-./scripts/check-public-dns.py        # every host must PASS before the next step
-./scripts/npm-proxy-hosts.py         # issues the per-host certificates now that
-                                     # HTTP-01 challenges reach this edge
-./scripts/check-public-dns.py        # re-verify TLS end to end
+./scripts/check-public-dns.py        # delegation, records and TLS
 ```
 
 `check-public-dns.py` is the check that catches this class of failure: it
@@ -181,9 +179,8 @@ compares the SOA primary nameserver the public resolvers report with the one our
 own nameserver reports — a recursive resolver only echoes the zone's *own* NS
 RRset, so a foreign delegation is invisible to a normal `dig` of the domain.
 
-Until the delegation moves, `subscribe.rizzaura.net` (and the six service hosts)
-exist here without certificates: the proxy hosts and the internal A records are
-already in place, so the cutover is a nameserver change and one re-run.
+The proxy hosts for `subscribe.rizzaura.net` and the six service hosts are now
+in place, enabled and serving HTTPS.
 
 ### Wildcard SSL with TSIG
 

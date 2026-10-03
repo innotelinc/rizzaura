@@ -78,7 +78,7 @@ else
     sed -i "s|^OMNIROUTE_INITIAL_PASSWORD=.*|OMNIROUTE_INITIAL_PASSWORD=$(openssl rand -base64 18 | tr -d '/+=')|" "$ENV_FILE"
     sed -i "s|^OMNIROUTE_WS_BRIDGE_SECRET=.*|OMNIROUTE_WS_BRIDGE_SECRET=$(openssl rand -base64 32)|" "$ENV_FILE"
     # Derive the public URLs from BASE_DOMAIN so the whole platform follows
-    # one setting (e.g. rizz.innotel.us now, rizzaura.net after DNS moves).
+    # one setting (e.g. rizzaura.net).
     BASE=$(grep '^BASE_DOMAIN=' "$ENV_FILE" | cut -d= -f2)
     sed -i "s|^# APP_URL=.*|APP_URL=https://app.${BASE}|" "$ENV_FILE"
     sed -i "s|^# API_URL=.*|API_URL=https://api.${BASE}|" "$ENV_FILE"
@@ -211,7 +211,7 @@ echo "  /api/me → $ME"
 SEASON=$(curl -sf "http://127.0.0.1:${API_PORT}/api/seasons" 2>/dev/null | head -c 120 || true)
 echo "  /api/seasons → $SEASON"
 echo ""
-BASE="${BASE_DOMAIN:-rizz.innotel.us}"
+BASE="${BASE_DOMAIN:-rizzaura.net}"
 pass "Setup complete. Point Nginx Proxy Manager at this host and visit:"
 echo "    https://app.${BASE} (main app) · https://rankings.${BASE} · https://community.${BASE}"
 echo "    https://admin.${BASE} (admins) · https://api.${BASE} · https://auth.${BASE} (Authentik)"

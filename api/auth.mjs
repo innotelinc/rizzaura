@@ -16,7 +16,7 @@ const DAY = 86400000;
 
 export const authConfig = () => ({
   issuer: (
-    process.env.AUTHENTIK_ISSUER || `https://auth.${process.env.BASE_DOMAIN || "rizz.innotel.us"}`
+    process.env.AUTHENTIK_ISSUER || `https://auth.${process.env.BASE_DOMAIN || "rizzaura.net"}`
   ).replace(/\/$/, ""),
   clientId: process.env.AUTHENTIK_CLIENT_ID || "",
   clientSecret: process.env.AUTHENTIK_CLIENT_SECRET || "",
@@ -117,7 +117,10 @@ export async function buildLoginUrl(next) {
     response_type: "code",
     scope: "openid profile email goauthentik.io/providers/oauth2/scope-groups",
     state,
-    prompt: "login",
+    // NOTE: no `prompt=login`. Authentik (2025.10, issue #18507) asks an
+    // unauthenticated user to complete the login *twice* when the authorize
+    // request carries prompt=login, so the flow loops back to the login form.
+    // Omitting it means an existing Authentik session is reused instead.
   });
   if (next) params.set("next", next);
   return doc.authorization_endpoint + "?" + params.toString();

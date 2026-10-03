@@ -10,9 +10,9 @@ COPY apps/admin/package.json apps/admin/package.json
 RUN npm ci
 COPY apps ./apps
 
-ARG VITE_API_BASE=https://api.rizz.innotel.us
+ARG VITE_API_BASE=https://api.rizzaura.net
 ENV VITE_API_BASE=$VITE_API_BASE
-ARG VITE_BASE_DOMAIN=rizz.innotel.us
+ARG VITE_BASE_DOMAIN=rizzaura.net
 ENV VITE_BASE_DOMAIN=$VITE_BASE_DOMAIN
 RUN npm run build -w apps/community
 
