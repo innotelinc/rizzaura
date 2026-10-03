@@ -212,7 +212,7 @@ function Gate({ me, loading }) {
           </p>
           <a
             className="btn"
-            href={apiUrl("/auth/login?next=" + encodeURIComponent(window.location.origin))}
+            href={apiUrl("/api/auth/login?next=" + encodeURIComponent(window.location.origin))}
           >
             Sign In
           </a>

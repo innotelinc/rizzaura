@@ -43,7 +43,7 @@ function Nav({ me }) {
         ) : (
           <a
             className="nav-cta"
-            href={apiUrl("/auth/login?next=" + encodeURIComponent(window.location.origin))}
+            href={apiUrl("/api/auth/login?next=" + encodeURIComponent(window.location.origin))}
           >
             Sign In
           </a>
@@ -120,7 +120,7 @@ function Battles({ s, me }) {
   const vote = async (id) => {
     if (!me) {
       window.location.href = apiUrl(
-        "/auth/login?next=" + encodeURIComponent(window.location.origin),
+        "/api/auth/login?next=" + encodeURIComponent(window.location.origin),
       );
       return;
     }
@@ -188,7 +188,7 @@ function Census({ s, me }) {
   const cast = async (qid, option) => {
     if (!me) {
       window.location.href = apiUrl(
-        "/auth/login?next=" + encodeURIComponent(window.location.origin),
+        "/api/auth/login?next=" + encodeURIComponent(window.location.origin),
       );
       return;
     }
@@ -295,7 +295,7 @@ function Teams({ s, me }) {
   const create = async () => {
     if (!me) {
       window.location.href = apiUrl(
-        "/auth/login?next=" + encodeURIComponent(window.location.origin),
+        "/api/auth/login?next=" + encodeURIComponent(window.location.origin),
       );
       return;
     }
@@ -316,7 +316,7 @@ function Teams({ s, me }) {
   const join = async (id) => {
     if (!me) {
       window.location.href = apiUrl(
-        "/auth/login?next=" + encodeURIComponent(window.location.origin),
+        "/api/auth/login?next=" + encodeURIComponent(window.location.origin),
       );
       return;
     }
