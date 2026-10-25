@@ -24,6 +24,12 @@ slots rank at the top, outbid.lol style — **rank is what you pay.** 💰
 
 ---
 
+> **About Rizz Aura** — the self-hosted aura leaderboard platform for ranking creators,
+> brands, streamers, athletes, and friends: real-time leaderboards, achievements and
+> badges, seasonal championships, a Hall of Fame, AI-powered achievement
+> recommendations, and paid board slots — with Cerulean Authentik SSO and a zero-dependency Node
+> API. **Landing page:** [innotelinc.github.io/rizzaura](https://innotelinc.github.io/rizzaura)
+
 ## Why Rizz Aura
 
 | Problem | Rizz Aura answer |
@@ -33,12 +39,6 @@ slots rank at the top, outbid.lol style — **rank is what you pay.** 💰
 | Paid slots are hard to wire | Paid board slots rank at the top; rank is what you pay, with Stripe under Magnate |
 | Secrets committed to .env or repos | Cerulean Vault is the only secrets store; .env carries derived references and is gitignored |
 | Leaderboard platform is not an ecosystem citizen | Rizz Aura consumes Cerulean identity + Magnate billing and documents the contracts |
-
-> **About Rizz Aura** — the self-hosted aura leaderboard platform for ranking creators,
-> brands, streamers, athletes, and friends: real-time leaderboards, achievements and
-> badges, seasonal championships, a Hall of Fame, AI-powered achievement
-> recommendations, and paid board slots — with Cerulean Authentik SSO and a zero-dependency Node
-> API. **Landing page:** [innotelinc.github.io/rizzaura](https://innotelinc.github.io/rizzaura)
 
 ---
 
@@ -353,13 +353,10 @@ Rizz Aura is the ecosystem's **CommunityOps** platform — leaderboards, reputat
 [**Innotel Platform Stack**](https://github.com/innotelinc/innotel-platform-stack) — the
 canonical single-responsibility architecture where Authentik owns identity, Cerulean Vault owns
 secrets, Cerulean owns trust, ONYX owns storage, Magnate owns revenue, NPM Edge owns the edge, and every other
-platform is a 
----
+platform is a business function that consumes them. See
+[docs/stack.md](docs/stack.md) for this platform's owns/consumes boundaries and its
+Cerulean Vault secret setup.
 
 ## License
 
 Rizz Aura is licensed under the MIT License. See [LICENSE](LICENSE) for the full text.
-
-business function that consumes them. See
-[docs/stack.md](docs/stack.md) for this platform's owns/consumes boundaries and its
-Cerulean Vault secret setup.
